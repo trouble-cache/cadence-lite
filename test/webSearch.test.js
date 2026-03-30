@@ -17,6 +17,24 @@ test("shouldUseWebSearch triggers on current-info prompts", () => {
   }), false);
 });
 
+test("shouldUseWebSearch can trigger from automation prompt text", () => {
+  assert.equal(shouldUseWebSearch({
+    input: { content: "Scheduled action: Morning check-in" },
+    automation: {
+      label: "Morning check-in",
+      prompt: "Look up today's weather first, then check in gently.",
+    },
+  }), true);
+
+  assert.equal(shouldUseWebSearch({
+    input: { content: "Scheduled action: Morning check-in" },
+    automation: {
+      label: "Morning check-in",
+      prompt: "Check in gently and ask how the morning is going.",
+    },
+  }), false);
+});
+
 test("buildWebSearchRequestOptions returns OpenRouter plugin config", () => {
   assert.deepEqual(buildWebSearchRequestOptions(), {
     plugins: [{ id: "web" }],

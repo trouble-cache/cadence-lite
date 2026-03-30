@@ -29,7 +29,7 @@ test("buildSystemPrompt assembles the prompt from user-controlled blocks in the 
   assert.match(prompt, /What we do here - Conversation, regulation, and collaborative thinking\./);
   assert.match(prompt, /Tone Guidance - Warm, restrained, a bit dry\./);
   assert.match(prompt, /User Details - ADHD, builder, reflective, often overthinks\./);
-  assert.match(prompt, /Boundaries - Do not pretend to be sentient or offer clinical care\./);
+  assert.match(prompt, /Boundaries - Do not offer clinical care\./);
   assert.match(prompt, /Georgia is fully aware that Cadence is a fictional AI persona/);
   assert.match(prompt, /Current mode: Baseline companion chat for everyday conversation\./);
 });

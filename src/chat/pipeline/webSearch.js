@@ -1,11 +1,17 @@
-function shouldUseWebSearch({ input } = {}) {
-  const content = String(input?.content || "").trim();
+const WEB_SEARCH_TRIGGER_PATTERN = /\b(latest|current|recent|tonight|this week|this month|news|weather|forecast|price|score|result|results|look up|lookup|search|find online|on the web|verify|fact check|fact-check|what's happening|what is happening|who is currently)\b/i;
 
-  if (!content) {
+function shouldUseWebSearch({ input, automation } = {}) {
+  const candidates = [
+    String(input?.content || "").trim(),
+    String(automation?.label || "").trim(),
+    String(automation?.prompt || "").trim(),
+  ].filter(Boolean);
+
+  if (!candidates.length) {
     return false;
   }
 
-  return /\b(latest|current|recent|tonight|this week|this month|news|weather|forecast|price|score|result|results|look up|lookup|search|find online|on the web|verify|fact check|fact-check|what's happening|what is happening|who is currently)\b/i.test(content);
+  return candidates.some((content) => WEB_SEARCH_TRIGGER_PATTERN.test(content));
 }
 
 function buildWebSearchRequestOptions() {

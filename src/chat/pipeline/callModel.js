@@ -92,7 +92,7 @@ async function callModel({
   const providerConfig = resolveLlmProviderConfig(config, "chat");
   const providerLabel = providerConfig.provider;
   const includeTimeContext = config.chat?.includeTimeContext !== false;
-  const useWebSearch = shouldUseWebSearch({ input });
+  const useWebSearch = shouldUseWebSearch({ input, automation });
   const totalToolCount = tools.list().length + (useWebSearch ? 1 : 0);
 
   logger.info("[chat] Calling model", {
