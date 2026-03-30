@@ -1,0 +1,27 @@
+{
+  "name": "cadence-lite",
+  "version": "1.0.0",
+  "description": "Private Discord-based AI companion with durable memory, admin tools, and OpenRouter support",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test",
+    "commands:register": "node scripts/register-commands.js",
+    "conversations:list": "node scripts/list-conversations.js",
+    "conversation:export": "node scripts/export-conversation.js",
+    "memories:import": "node scripts/import-memories.js",
+    "memories:list": "node scripts/list-memories.js",
+    "memories:usage": "node scripts/report-memory-usage.js",
+    "memories:reset": "node scripts/reset-memory-store.js",
+    "memories:delete": "node scripts/delete-memory.js",
+    "memories:qdrant:get": "node scripts/get-qdrant-memory.js",
+    "memories:qdrant:list": "node scripts/list-qdrant-memories.js",
+    "memories:sync": "node scripts/sync-memories-to-qdrant.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.19.3",
+    "dotenv": "^17.3.1",
+    "openai": "^6.32.0",
+    "pg": "^8.20.0"
+  }
+}

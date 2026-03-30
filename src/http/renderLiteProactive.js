@@ -1,0 +1,148 @@
+function renderLiteProactivePage({
+  automations = [],
+  journalEntries = [],
+  editingAutomation = null,
+  journalPage = 1,
+  journalTotalPages = 1,
+  theme = "light",
+  helpers,
+}) {
+  const {
+    escapeHtml,
+    formatDateValue,
+    getAutomationTypeLabel,
+    renderAutomationTypeOptions,
+    buildLiteAdminLocation,
+    buildLiteAutomationExtras,
+    renderIconImage,
+    renderConfirmOnSubmit,
+    withThemeField,
+  } = helpers;
+  const automationRows = automations.map((automation) => [
+    "<tr>",
+    `<td><p class="memory-title"><a class="memory-title-link" href="${escapeHtml(buildLiteAdminLocation({
+      view: "proactive",
+      theme,
+      extra: buildLiteAutomationExtras({ automation: automation.automationId, journalPage }),
+    }))}">${escapeHtml(automation.label)}</a></p></td>`,
+    `<td><span class="badge type">${escapeHtml(getAutomationTypeLabel(automation.type))}</span></td>`,
+    "<td class=\"actions-col\"><div class=\"row-actions\">",
+    `<a class="icon-button" href="${escapeHtml(buildLiteAdminLocation({
+      view: "proactive",
+      theme,
+      extra: buildLiteAutomationExtras({ automation: automation.automationId, journalPage }),
+    }))}" aria-label="Edit automation" title="Edit automation">${renderIconImage("edit", theme, "Edit", "table-action-icon")}</a>`,
+    `<form method="post" action="/admin/actions/automation-toggle">`,
+    withThemeField(theme),
+    "<input type=\"hidden\" name=\"view\" value=\"proactive\">",
+    `<input type="hidden" name="journalPage" value="${escapeHtml(String(journalPage))}">`,
+    `<input type="hidden" name="automationId" value="${escapeHtml(automation.automationId)}">`,
+    `<button type="submit" class="icon-button" aria-label="${escapeHtml(automation.enabled ? "Pause automation" : "Enable automation")}" title="${escapeHtml(automation.enabled ? "Pause automation" : "Enable automation")}">${renderIconImage(automation.enabled ? "pause" : "play", theme, automation.enabled ? "Pause" : "Play", "table-action-icon")}</button>`,
+    "</form>",
+    `<form method="post" action="/admin/actions/automation-delete"${renderConfirmOnSubmit("Delete this automation?\n\nThis removes the schedule from Cadence Lite. You can recreate it later if needed.")}>`,
+    withThemeField(theme),
+    "<input type=\"hidden\" name=\"view\" value=\"proactive\">",
+    `<input type="hidden" name="journalPage" value="${escapeHtml(String(journalPage))}">`,
+    `<input type="hidden" name="automationId" value="${escapeHtml(automation.automationId)}">`,
+    `<button type="submit" class="icon-button" aria-label="Delete automation" title="Delete automation">${renderIconImage("delete", theme, "Delete", "table-action-icon")}</button>`,
+    "</form>",
+    "</div></td>",
+    "</tr>",
+  ].join("")).join("");
+  const journalRows = journalEntries.map((entry) => [
+    "<article class=\"proactive-row\">",
+    "<div>",
+    `<h3 class="item-title">${escapeHtml(entry.title)}</h3>`,
+    `<div class="proactive-meta"><span class="badge">${escapeHtml(formatDateValue(entry.createdAt))}</span></div>`,
+    `<p class="memory-preview">${escapeHtml(entry.content)}</p>`,
+    "</div>",
+    "<div class=\"toolbar\">",
+    `<form method="post" action="/admin/actions/journal-delete"${renderConfirmOnSubmit("Delete this journal entry?\n\nThis removes it from the journal history Cadence can reflect on later.")}>`,
+    withThemeField(theme),
+    "<input type=\"hidden\" name=\"view\" value=\"proactive\">",
+    `<input type="hidden" name="journalPage" value="${escapeHtml(String(journalPage))}">`,
+    `<input type="hidden" name="entryId" value="${escapeHtml(entry.entryId)}">`,
+    "<button type=\"submit\" class=\"toolbar-button secondary\">Delete</button>",
+    "</form>",
+    "</div>",
+    "</article>",
+  ].join("")).join("");
+  const previousJournalPage = journalPage > 1 ? journalPage - 1 : null;
+  const nextJournalPage = journalPage < journalTotalPages ? journalPage + 1 : null;
+
+  return [
+    "<section class=\"lite-panel proactive-shell flat\">",
+    "<div class=\"panel-header\"><div><h2>Check-ins &amp; Prompts</h2><p>Set up daily automations here. Use <code>/channel-id</code> and <code>/user-id</code> in Discord when you need the right IDs.</p></div></div>",
+    "<div class=\"proactive-grid\">",
+    "<section class=\"settings-block\">",
+    "<h3>Scheduled Actions</h3>",
+    "<div class=\"memory-table-wrap\">",
+    "<table class=\"memory-table\">",
+    "<thead><tr><th>Label</th><th>Type</th><th class=\"actions-col\">Actions</th></tr></thead>",
+    `<tbody>${automationRows || "<tr><td colspan=\"3\" class=\"empty-state\">No automations yet. Add a daily check-in or journal entry to get started.</td></tr>"}</tbody>`,
+    "</table>",
+    "</div>",
+    "</section>",
+    "<section class=\"settings-block proactive-form\">",
+    `<h3>${editingAutomation ? "Edit Automation" : "Create New"}</h3>`,
+    "<form method=\"post\" action=\"/admin/actions/automation-save\">",
+    withThemeField(theme),
+    "<input type=\"hidden\" name=\"view\" value=\"proactive\">",
+    `<input type="hidden" name="journalPage" value="${escapeHtml(String(journalPage))}">`,
+    editingAutomation ? `<input type="hidden" name="automationId" value="${escapeHtml(editingAutomation.automationId)}">` : "",
+    `<div><label for="automationLabel">Label</label><input id="automationLabel" name="label" type="text" required value="${escapeHtml(editingAutomation?.label || "")}" placeholder="Morning check-in"></div>`,
+    `<div><label for="automationType">Type</label><select id="automationType" name="type">${renderAutomationTypeOptions(editingAutomation?.type || "check_in")}</select></div>`,
+    "<div class=\"grid\">",
+    `<div><label for="automationChannelId">Channel ID</label><input id="automationChannelId" name="channelId" type="text" required value="${escapeHtml(editingAutomation?.channelId || "")}" placeholder="123456789012345678"></div>`,
+    "<div>",
+    `<div><label for="automationScheduleTime">Time</label><input id="automationScheduleTime" name="scheduleTime" type="time" required value="${escapeHtml(editingAutomation?.scheduleTime || "21:00")}"></div>`,
+    "</div>",
+    "</div>",
+    `<label for="automationPrompt">Prompt</label><textarea id="automationPrompt" name="prompt" placeholder="Give a short instruction for this automation.">${escapeHtml(editingAutomation?.prompt || "")}</textarea>`,
+    "<div class=\"proactive-bottom\">",
+    "<div class=\"proactive-bottom-row\">",
+    `<div><label>Mention User</label><div class="switch-field"><label class="switch-control"><input type="checkbox" name="mentionUser"${editingAutomation?.mentionUser ? " checked" : ""}><span></span></label></div></div>`,
+    `<div><label for="automationUserId">User ID</label><input id="automationUserId" name="userId" type="text" value="${escapeHtml(editingAutomation?.userId || "")}" placeholder="Optional"></div>`,
+    "</div>",
+    "<div class=\"proactive-bottom-row actions\">",
+    "<div><div class=\"segmented-control\" aria-label=\"Automation status\">",
+    `<input type="radio" id="automationStateEnabled" name="enabledState" value="enabled"${editingAutomation?.enabled === false ? "" : " checked"}>`,
+    "<label for=\"automationStateEnabled\">Enabled</label>",
+    `<input type="radio" id="automationStatePaused" name="enabledState" value="paused"${editingAutomation?.enabled === false ? " checked" : ""}>`,
+    "<label for=\"automationStatePaused\">Paused</label>",
+    "</div></div>",
+    "<div class=\"toolbar\">",
+    `<button type="submit">${editingAutomation ? "Save Automation" : "Add Automation"}</button>`,
+    editingAutomation
+      ? `<a class="toolbar-button secondary" href="${escapeHtml(buildLiteAdminLocation({ view: "proactive", theme, extra: buildLiteAutomationExtras({ journalPage }) }))}">Cancel</a>`
+      : "",
+    "</div>",
+    "</div>",
+    "</div>",
+    "</form>",
+    "</section>",
+    "</div>",
+    "</section>",
+    "<section class=\"lite-panel proactive-shell\">",
+    "<div class=\"panel-header\"><div><h2>Recent Journals</h2><p>The most recent journal entries your AI can reflect on next time. If a journal misfires, you can remove it from the recent list here, to avoid drift.</p></div></div>",
+    `<div class="proactive-list">${journalRows || "<p class=\"meta\">No journal entries yet.</p>"}</div>`,
+    journalTotalPages > 1
+      ? [
+        "<div class=\"toolbar\" style=\"justify-content:center\">",
+        previousJournalPage
+          ? `<a class="toolbar-button secondary" href="${escapeHtml(buildLiteAdminLocation({ view: "proactive", theme, extra: buildLiteAutomationExtras({ journalPage: previousJournalPage }) }))}">Previous</a>`
+          : "<span class=\"toolbar-button secondary is-disabled\" aria-disabled=\"true\">Previous</span>",
+        `<span class="meta">Page ${escapeHtml(String(journalPage))} of ${escapeHtml(String(journalTotalPages))}</span>`,
+        nextJournalPage
+          ? `<a class="toolbar-button secondary" href="${escapeHtml(buildLiteAdminLocation({ view: "proactive", theme, extra: buildLiteAutomationExtras({ journalPage: nextJournalPage }) }))}">Next</a>`
+          : "<span class=\"toolbar-button secondary is-disabled\" aria-disabled=\"true\">Next</span>",
+        "</div>",
+      ].join("")
+      : "",
+    "</section>",
+  ].join("");
+}
+
+module.exports = {
+  renderLiteProactivePage,
+};
