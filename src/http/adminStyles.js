@@ -157,6 +157,7 @@ a{color:var(--accent)}
 .proactive-row .toolbar{justify-content:flex-end}
 .proactive-form textarea{min-height:110px}
 .proactive-form .grid{align-items:start}
+.proactive-form form{padding-bottom:1rem}
 .proactive-grid > .settings-block{border:none;border-radius:0;background:transparent;padding:0}
 .proactive-grid > .settings-block:first-child{padding:0 1rem 0 0;border-right:1px solid var(--border);min-width:0}
 .proactive-grid > .settings-block:last-child{padding:0 0 0 1rem;min-width:0}
