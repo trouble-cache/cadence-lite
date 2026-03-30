@@ -7,12 +7,6 @@ const MEMORY_TYPE_CAPS = Object.freeze({
   resolved: 1,
 });
 
-const MEMORY_TYPE_GATES = Object.freeze({
-  anchor: 0.3,
-  canon: 0.3,
-  resolved: 0.4,
-});
-
 const QUERY_LAYER_LIMITS = Object.freeze({
   primary: 14,
   continuity: 10,
@@ -201,18 +195,7 @@ function selectMemoriesByType(hits) {
 function passesMinimumScore(hit) {
   const payload = hit.payload || {};
   const memoryType = payload.memory_type;
-  const gate = MEMORY_TYPE_GATES[memoryType];
-
-  if (typeof gate !== "number") {
-    return false;
-  }
-
-  const rawScore = Number(hit.score || 0);
-
-  if (rawScore < gate) {
-    return false;
-  }
-  return true;
+  return Boolean(MEMORY_TYPE_CAPS[memoryType]);
 }
 
 function buildMemorySearchFilter({ userScope, memoryTypes = [] }) {
@@ -385,7 +368,6 @@ function createQdrantMemoryProvider({ config, logger, memoryStore = null, retrie
 
 module.exports = {
   MEMORY_TYPE_CAPS,
-  MEMORY_TYPE_GATES,
   normalizeQueryLayers,
   searchMemoryLayer,
   mergeRankedHits,

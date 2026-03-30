@@ -7,7 +7,6 @@ const {
   scrollPoints,
 } = require("../src/memory/qdrantClient");
 const {
-  MEMORY_TYPE_GATES,
   buildMemorySearchFilter,
   getRetrievalPlan,
   hydrateMemoriesFromStore,
@@ -196,34 +195,19 @@ test("selectMemoriesByType respects caps after weighted reranking", () => {
   ]);
 });
 
-test("passesMinimumScore uses per-type raw score gates", () => {
+test("passesMinimumScore allows supported durable memory types regardless of score", () => {
   assert.equal(passesMinimumScore({
-    score: MEMORY_TYPE_GATES.canon - 0.01,
-    payload: { memory_type: "canon" },
-  }), false);
-
-  assert.equal(passesMinimumScore({
-    score: MEMORY_TYPE_GATES.canon,
+    score: 0.01,
     payload: { memory_type: "canon" },
   }), true);
 
   assert.equal(passesMinimumScore({
-    score: MEMORY_TYPE_GATES.resolved - 0.01,
-    payload: { memory_type: "resolved" },
-  }), false);
-
-  assert.equal(passesMinimumScore({
-    score: MEMORY_TYPE_GATES.resolved,
+    score: 0,
     payload: { memory_type: "resolved" },
   }), true);
 
   assert.equal(passesMinimumScore({
-    score: MEMORY_TYPE_GATES.anchor - 0.01,
-    payload: { memory_type: "anchor" },
-  }), false);
-
-  assert.equal(passesMinimumScore({
-    score: MEMORY_TYPE_GATES.anchor,
+    score: 0.02,
     payload: { memory_type: "anchor" },
   }), true);
 });
