@@ -20,13 +20,13 @@ function renderLiteProactivePage({
   } = helpers;
   const automationRows = automations.map((automation) => [
     "<tr>",
-    `<td><p class="memory-title"><a class="memory-title-link" href="${escapeHtml(buildLiteAdminLocation({
+    `<td data-label="Label"><p class="memory-title"><a class="memory-title-link" href="${escapeHtml(buildLiteAdminLocation({
       view: "proactive",
       theme,
       extra: buildLiteAutomationExtras({ automation: automation.automationId, journalPage }),
     }))}">${escapeHtml(automation.label)}</a></p></td>`,
-    `<td><span class="badge type">${escapeHtml(getAutomationTypeLabel(automation.type))}</span></td>`,
-    "<td class=\"actions-col\"><div class=\"row-actions\">",
+    `<td data-label="Type"><span class="badge type">${escapeHtml(getAutomationTypeLabel(automation.type))}</span></td>`,
+    "<td class=\"actions-col\" data-label=\"Actions\"><div class=\"row-actions\">",
     `<a class="icon-button" href="${escapeHtml(buildLiteAdminLocation({
       view: "proactive",
       theme,

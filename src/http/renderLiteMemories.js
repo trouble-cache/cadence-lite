@@ -61,7 +61,7 @@ function renderLiteMemoriesPage({
   const nextPage = page < totalPages ? page + 1 : null;
   const memoryRows = memories.map((memory) => [
     "<tr>",
-    "<td>",
+    "<td data-label=\"Title\">",
     `<p class="memory-title"><a class="memory-title-link" href="${escapeHtml(buildAdminLocation({
       path: "/admin/memories/edit",
       theme,
@@ -78,11 +78,11 @@ function renderLiteMemoriesPage({
     }))}">${escapeHtml(memory.title)}</a></p>`,
     `<p class="meta">${escapeHtml(memory.active ? "Active" : "Archived")}</p>`,
     "</td>",
-    `<td><div class="memory-content">${escapeHtml(memory.content)}</div></td>`,
-    `<td><div class="memory-chip-row"><span class="badge type">${escapeHtml(memory.memoryType)}</span></div></td>`,
-    `<td><div class="memory-chip-row"><span class="badge domain">${escapeHtml(memory.domain)}</span></div></td>`,
-    `<td class="updated-col">${escapeHtml(formatDateValue(memory.updatedAt))}</td>`,
-    "<td class=\"actions-col\">",
+    `<td data-label="Content"><div class="memory-content">${escapeHtml(memory.content)}</div></td>`,
+    `<td data-label="Type"><div class="memory-chip-row"><span class="badge type">${escapeHtml(memory.memoryType)}</span></div></td>`,
+    `<td data-label="Category"><div class="memory-chip-row"><span class="badge domain">${escapeHtml(memory.domain)}</span></div></td>`,
+    `<td class="updated-col" data-label="Updated">${escapeHtml(formatDateValue(memory.updatedAt))}</td>`,
+    "<td class=\"actions-col\" data-label=\"Actions\">",
     "<div class=\"row-actions\">",
     `<a class="icon-button" href="${escapeHtml(buildAdminLocation({
       path: "/admin/memories/edit",

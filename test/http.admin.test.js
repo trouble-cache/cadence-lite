@@ -146,7 +146,7 @@ test("renderLiteAdminPage shows the settings view with persisted runtime control
   assert.match(page, /Export Memories/);
   assert.match(page, /Backup App Settings/);
   assert.match(page, /Export App Settings/);
-  assert.match(page, /saved settings, automations, and journals/i);
+  assert.match(page, /things like saved settings, schedules, and journals/i);
   assert.match(page, /does not include durable memories or conversation history/i);
   assert.match(page, /\/admin\/exports\/app-settings\?theme=dark/);
   assert.match(page, /Rebuild Memory Index/);
