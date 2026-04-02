@@ -130,7 +130,7 @@ function renderLiteSettingsPage({
     "</div>",
     "<p class=\"meta\" style=\"margin-top:.75rem\"><em>First-time setup: If you’re starting from scratch, adding one test memory and clicking Resync Memories is enough to create the initial memory index.</em></p>",
     "<div class=\"form-divider\"></div>",
-    "<div class=\"copy-block\"><h2>Backup App Settings</h2><p>Download a JSON backup of the rest of Cadence Lite’s stored app data, including saved settings, automations, and journals. This does not include durable memories or conversation history, so you can keep a separate backup before switching to Cadence Core.</p></div>",
+    "<div class=\"copy-block\"><h2>Backup App Settings</h2><p>Download a JSON backup of the rest of your Cadence Lite setup — things like saved settings, schedules, and journals. This does not include durable memories or conversation history.</p></div>",
     "<div class=\"toolbar\" style=\"align-items:center\">",
     `<a class="toolbar-button secondary" href="${escapeHtml(appSettingsExportLocation)}">Export App Settings</a>`,
     "</div>",
