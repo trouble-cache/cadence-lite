@@ -79,7 +79,10 @@ function createNoopJournalStore({ logger }) {
   return {
     persistenceEnabled: false,
     async init() {
-      logger.warn("[journals] DATABASE_URL is not set; journal entry persistence is disabled.");
+      logger.warn("[journals] DATABASE_URL is not set, so journals will not be saved.");
+    },
+    async listEntries() {
+      return [];
     },
     async listRecentEntries() {
       return [];
@@ -113,9 +116,37 @@ function createJournalStore({ config, logger }) {
         await pool.query(statement);
       }
 
-      logger.info("[journals] Journal store ready", {
+      logger.info("[journals] Journal storage is ready", {
         provider: "postgres",
       });
+    },
+
+    async listEntries({ userScope, limit = 5000, offset = 0 } = {}) {
+      const normalizedScope = normalizeText(userScope, "User scope");
+      const safeLimit = Math.max(1, Math.min(Number(limit) || 5000, 10000));
+      const safeOffset = Math.max(0, Number(offset) || 0);
+      const { rows } = await pool.query(
+        `
+          SELECT
+            id,
+            entry_id,
+            user_scope,
+            automation_id,
+            channel_id,
+            guild_id,
+            title,
+            content,
+            created_at
+          FROM journal_entries
+          WHERE user_scope = $1
+          ORDER BY created_at DESC, id DESC
+          LIMIT $2
+          OFFSET $3
+        `,
+        [normalizedScope, safeLimit, safeOffset],
+      );
+
+      return rows.map(mapJournalEntryRow);
     },
 
     async listRecentEntries({ userScope, limit = 5, offset = 0 } = {}) {

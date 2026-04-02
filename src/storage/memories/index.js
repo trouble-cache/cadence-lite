@@ -214,7 +214,7 @@ function mapMemoryRow(row) {
 function createNoopMemoryStore({ logger }) {
   return {
     async init() {
-      logger.warn("[memory] DATABASE_URL is not set; memory persistence is disabled.");
+      logger.warn("[memory] DATABASE_URL is not set, so durable memories will not be saved.");
     },
     async upsertMemory() {
       throw new Error("Memory store is disabled because DATABASE_URL is not set.");
@@ -256,7 +256,7 @@ function createMemoryStore({ config, logger }) {
         await pool.query(statement);
       }
 
-      logger.info("[memory] Memory store ready", {
+      logger.info("[memory] Durable memory storage is ready", {
         provider: "postgres",
       });
     },

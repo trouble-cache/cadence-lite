@@ -10,7 +10,7 @@ function createMemoryService({ config, logger, memoryStore = null }) {
     ? createQdrantMemoryProvider({ config, logger, memoryStore, retrievalProfile })
     : createNoopMemoryProvider({ config, logger });
 
-  logger.info("[memory] Memory service configured", {
+  logger.info("[memory] Memory service is ready", {
     retrievalProfile,
     qdrantConfigured: Boolean(config.qdrant.url),
     embeddingProvider: embeddingProviderConfig.provider,

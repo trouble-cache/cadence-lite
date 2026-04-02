@@ -27,6 +27,10 @@ function renderLiteSettingsPage({
     path: "/admin/exports/memories",
     theme,
   });
+  const appSettingsExportLocation = buildAdminLocation({
+    path: "/admin/exports/app-settings",
+    theme,
+  });
   const pruneOptions = renderOptions(["30", "60", "90", "180"], "90");
   const storage = conversationStorage || {
     eventCount: 0,
@@ -125,6 +129,12 @@ function renderLiteSettingsPage({
     "</form>",
     "</div>",
     "<p class=\"meta\" style=\"margin-top:.75rem\"><em>First-time setup: If you’re starting from scratch, adding one test memory and clicking Resync Memories is enough to create the initial memory index.</em></p>",
+    "<div class=\"form-divider\"></div>",
+    "<div class=\"copy-block\"><h2>Backup App Settings</h2><p>Download a JSON backup of the rest of Cadence Lite’s stored app data, including saved settings, automations, and journals. This does not include durable memories or conversation history, so you can keep a separate backup before switching to Cadence Core.</p></div>",
+    "<div class=\"toolbar\" style=\"align-items:center\">",
+    `<a class="toolbar-button secondary" href="${escapeHtml(appSettingsExportLocation)}">Export App Settings</a>`,
+    "</div>",
+    "<p class=\"meta\" style=\"margin-top:.75rem\"><em>This backup is intended as a safety net for upgrades and restores. Durable memories are still exported separately through Export Memories.</em></p>",
     "<div class=\"toolbar\" style=\"align-items:center;justify-content:space-between;margin-top:.75rem\">",
     "<div class=\"copy-block\" style=\"margin:0\"><h2>Rebuild Memory Index</h2><p>Recreate the memory index using your current embeddings model and resync all stored memories from Postgres. Use this if you change the embeddings model, or if the memory index needs to be rebuilt from scratch. This does not delete the source memories stored in Postgres.</p></div>",
     "</div>",

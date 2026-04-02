@@ -113,6 +113,57 @@ function buildMemoryExportPayload({ config, memories = [] }) {
   };
 }
 
+function buildAppSettingsExportPayload({
+  config,
+  settings = {},
+  automations = [],
+  journalEntries = [],
+}) {
+  return {
+    exportedAt: new Date().toISOString(),
+    product: "cadence-lite",
+    exportType: "app_settings",
+    includes: [
+      "app_settings",
+      "automations",
+      "journal_entries",
+    ],
+    counts: {
+      settings: Object.keys(settings || {}).length,
+      automations: automations.length,
+      journalEntries: journalEntries.length,
+    },
+    settings,
+    automations: automations.map((automation) => ({
+      automationId: automation.automationId,
+      userScope: automation.userScope,
+      type: automation.type,
+      label: automation.label,
+      channelId: automation.channelId,
+      scheduleTime: automation.scheduleTime,
+      timezone: automation.timezone,
+      prompt: automation.prompt,
+      enabled: Boolean(automation.enabled),
+      mentionUser: Boolean(automation.mentionUser),
+      userId: automation.userId || null,
+      lastRunAt: automation.lastRunAt || null,
+      lastError: automation.lastError || "",
+      createdAt: automation.createdAt || null,
+      updatedAt: automation.updatedAt || null,
+    })),
+    journalEntries: journalEntries.map((entry) => ({
+      entryId: entry.entryId,
+      userScope: entry.userScope,
+      automationId: entry.automationId || null,
+      channelId: entry.channelId || null,
+      guildId: entry.guildId || null,
+      title: entry.title,
+      content: entry.content,
+      createdAt: entry.createdAt || null,
+    })),
+  };
+}
+
 function buildMemoryImportRecords({ fields, files }) {
   const uploadedFile = files.file || files.memoriesFile;
 
@@ -449,15 +500,7 @@ function renderLiteSidebar({ currentView = "settings", theme = "light", themeLin
       icon: "automation",
     },
   ];
-
-  return [
-    "<aside class=\"admin-sidebar\">",
-    "<div class=\"sidebar-head\">",
-    "<a class=\"sidebar-brand\" href=\"https://www.patreon.com/c/CadenceAI\" target=\"_blank\" rel=\"noreferrer\">",
-    `<span class="sidebar-logo" aria-hidden="true">${renderIconImage("logo", theme, "", "sidebar-logo-image")}</span>`,
-    "<span><strong>Cadence Lite</strong></span>",
-    "</a>",
-    "</div>",
+  const navigationMarkup = [
     "<nav class=\"sidebar-nav\" aria-label=\"Lite admin navigation\">",
     ...links.map((link) => [
       `<a href="${escapeHtml(buildLiteAdminLocation({ view: link.view, theme }))}"${currentView === link.view ? " aria-current=\"page\"" : ""}>`,
@@ -466,16 +509,43 @@ function renderLiteSidebar({ currentView = "settings", theme = "light", themeLin
       "</a>",
     ].join("")),
     "</nav>",
-    themeLinks
-      ? [
-        "<div class=\"sidebar-footer\">",
-        "<div class=\"theme-switcher\" aria-label=\"Theme toggle\">",
-        `<a href="${escapeHtml(themeLinks.light)}"${theme === "light" ? " aria-current=\"page\"" : ""}>Light</a>`,
-        `<a href="${escapeHtml(themeLinks.dark)}"${theme === "dark" ? " aria-current=\"page\"" : ""}>Dark</a>`,
-        "</div>",
-        "</div>",
-      ].join("")
-      : "",
+  ].join("");
+  const themeMarkup = themeLinks
+    ? [
+      "<div class=\"sidebar-footer\">",
+      "<div class=\"theme-switcher\" aria-label=\"Theme toggle\">",
+      `<a href="${escapeHtml(themeLinks.light)}"${theme === "light" ? " aria-current=\"page\"" : ""}>Light</a>`,
+      `<a href="${escapeHtml(themeLinks.dark)}"${theme === "dark" ? " aria-current=\"page\"" : ""}>Dark</a>`,
+      "</div>",
+      "</div>",
+    ].join("")
+    : "";
+
+  return [
+    "<aside class=\"admin-sidebar\">",
+    "<div class=\"sidebar-desktop\">",
+    "<div class=\"sidebar-head\">",
+    "<a class=\"sidebar-brand\" href=\"https://www.patreon.com/c/CadenceAI\" target=\"_blank\" rel=\"noreferrer\">",
+    `<span class="sidebar-logo" aria-hidden="true">${renderIconImage("logo", theme, "", "sidebar-logo-image")}</span>`,
+    "<span><strong>Cadence Lite</strong></span>",
+    "</a>",
+    "</div>",
+    navigationMarkup,
+    themeMarkup,
+    "</div>",
+    "<details class=\"sidebar-mobile\">",
+    "<summary class=\"sidebar-mobile-toggle\">",
+    "<span class=\"sidebar-mobile-brand\">",
+    `<span class="sidebar-logo" aria-hidden="true">${renderIconImage("logo", theme, "", "sidebar-logo-image")}</span>`,
+    "<span><strong>Cadence Lite</strong></span>",
+    "</span>",
+    "<span class=\"sidebar-mobile-trigger\">Menu</span>",
+    "</summary>",
+    "<div class=\"sidebar-mobile-panel\">",
+    navigationMarkup,
+    themeMarkup,
+    "</div>",
+    "</details>",
     "</aside>",
   ].join("");
 }
@@ -964,6 +1034,35 @@ function createHealthServer({
           innerRes.writeHead(200, {
             "Content-Type": "application/json; charset=utf-8",
             "Content-Disposition": `attachment; filename="cadence-memories-${dateStamp}.json"`,
+            "Cache-Control": "no-store",
+          });
+          innerRes.end(JSON.stringify(payload, null, 2));
+        })(req, res, context);
+      }
+
+      if (req.method === "GET" && url.pathname === "/admin/exports/app-settings") {
+        return withAdmin(async (_req, innerRes, innerContext) => {
+          const [settings, automations, journalEntries] = await Promise.all([
+            innerContext.settingsStore.listSettings(),
+            innerContext.automationStore.listAutomations({
+              userScope: innerContext.config.memory.userScope,
+            }),
+            innerContext.journalStore.listEntries({
+              userScope: innerContext.config.memory.userScope,
+              limit: 5000,
+            }),
+          ]);
+          const payload = buildAppSettingsExportPayload({
+            config: innerContext.config,
+            settings,
+            automations,
+            journalEntries,
+          });
+          const dateStamp = new Date().toISOString().slice(0, 10);
+
+          innerRes.writeHead(200, {
+            "Content-Type": "application/json; charset=utf-8",
+            "Content-Disposition": `attachment; filename="cadence-app-settings-${dateStamp}.json"`,
             "Cache-Control": "no-store",
           });
           innerRes.end(JSON.stringify(payload, null, 2));
@@ -1664,6 +1763,7 @@ module.exports = {
   parseMultipartFormData,
   parseBasicAuthHeader,
   buildMemoryExportPayload,
+  buildAppSettingsExportPayload,
   buildMemoryImportRecords,
   normalizeTheme,
   buildAdminLocation,

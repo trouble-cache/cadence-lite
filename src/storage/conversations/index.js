@@ -229,7 +229,7 @@ function validateEventInput({ role, source, eventType, metadata }) {
 function createNoopConversationStore({ logger }) {
   return {
     async init() {
-      logger.warn("[storage] DATABASE_URL is not set; conversation persistence is disabled.");
+      logger.warn("[storage] DATABASE_URL is not set, so conversation history will not be saved.");
     },
     async recordEvent() {},
     async listEventsByConversationId() {
@@ -346,7 +346,7 @@ function createConversationStore({ config, logger }) {
         await pool.query(statement);
       }
 
-      logger.info("[storage] Conversation store ready", {
+      logger.info("[storage] Conversation history is ready", {
         provider: "postgres",
       });
     },

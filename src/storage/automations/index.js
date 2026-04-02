@@ -202,7 +202,7 @@ function createNoopAutomationStore({ logger }) {
   return {
     persistenceEnabled: false,
     async init() {
-      logger.warn("[automations] DATABASE_URL is not set; automation persistence is disabled.");
+      logger.warn("[automations] DATABASE_URL is not set, so scheduled actions will not be saved.");
     },
     async listAutomations() {
       return [];
@@ -238,7 +238,7 @@ function createAutomationStore({ config, logger }) {
 
       await pool.query("UPDATE automations SET type = 'check_in' WHERE type = 'nudge';");
 
-      logger.info("[automations] Automation store ready", {
+      logger.info("[automations] Scheduled actions are ready", {
         provider: "postgres",
       });
     },

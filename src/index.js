@@ -15,7 +15,7 @@ async function startApp() {
   const config = loadConfig();
   const logger = createLogger(config.logLevel);
 
-  logger.info("[app] Starting Cadence", {
+  logger.info("[app] Starting Cadence Lite", {
     nodeEnv: config.nodeEnv,
     product: "cadence-lite",
   });
@@ -76,7 +76,7 @@ async function startApp() {
   registerEventHandlers({ client, config, logger, commands, chatPipeline, conversations });
 
   if (!config.discord.token) {
-    logger.error("[bot] DISCORD_TOKEN is missing. Railway health checks will still pass, but the bot cannot log in.");
+    logger.error("[bot] DISCORD_TOKEN is missing, so Cadence can’t log into Discord yet. Railway health checks may still pass.");
     process.exitCode = 1;
     return;
   }

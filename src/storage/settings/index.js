@@ -21,7 +21,7 @@ function normalizeSettingKey(value) {
 function createNoopSettingsStore({ logger }) {
   return {
     async init() {
-      logger.warn("[settings] DATABASE_URL is not set; app settings persistence is disabled.");
+      logger.warn("[settings] DATABASE_URL is not set, so app settings will not be saved.");
     },
     async listSettings() {
       return {};
@@ -43,7 +43,7 @@ function createSettingsStore({ config, logger }) {
   return {
     async init() {
       await pool.query(CREATE_APP_SETTINGS_TABLE_SQL);
-      logger.info("[settings] App settings store ready", {
+      logger.info("[settings] App settings are ready", {
         provider: "postgres",
       });
     },

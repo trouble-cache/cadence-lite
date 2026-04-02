@@ -126,7 +126,7 @@ function createMessageCreateHandler({ config, logger, chatPipeline, conversation
     let typingInterval = null;
 
     try {
-      logger.info("[chat] Received Discord message", {
+      logger.info("[chat] New message received", {
         guildId: message.guildId,
         channelId: message.channelId,
         conversationId,
@@ -231,10 +231,11 @@ function createMessageCreateHandler({ config, logger, chatPipeline, conversation
         }, error);
       }
 
-      logger.info("[chat] Sent Discord reply", {
+      logger.info("[chat] Reply sent", {
         messageId: message.id,
         channelId: message.channelId,
         conversationId,
+        authorName,
         replyLength: replyPayload.content.length,
         chunkCount: replyChunks.length,
       });

@@ -530,7 +530,7 @@ function createAutomationRunner({
         }
 
         try {
-          logger.info("[automations] Running scheduled automation", {
+          logger.info("[automations] Running a scheduled automation", {
             automationId: automation.automationId,
             type: automation.type,
             label: automation.label,

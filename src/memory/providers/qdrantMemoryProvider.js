@@ -39,34 +39,12 @@ const RETRIEVAL_PROFILES = Object.freeze({
 
 function summarizeMemoryHit(hit) {
   const payload = hit.payload || {};
-  const summary = {
-    memoryId: payload.memory_id,
-    title: payload.title,
-    memoryType: payload.memory_type,
-    domain: payload.domain,
-    importance: payload.importance,
-    score: Number(hit.score || 0),
-    layerBonus: Number(hit.layerBonus || 0),
-    weightedScore: Number(hit.weightedScore || 0),
+  return {
+    memoryType: payload.memory_type || "unknown",
+    domain: payload.domain || "general",
+    title: payload.title || "(untitled memory)",
+    weightedScore: Number(Number(hit.weightedScore || 0).toFixed(2)),
   };
-
-  if (hit.retrievalLayer) {
-    summary.retrievalLayer = hit.retrievalLayer;
-  }
-
-  if (hit.retrievalLane) {
-    summary.retrievalLane = hit.retrievalLane;
-  }
-
-  if (typeof hit.decayPenalty === "number" && hit.decayPenalty > 0) {
-    summary.decayPenalty = hit.decayPenalty;
-  }
-
-  if (payload.reference_date) {
-    summary.referenceDate = payload.reference_date;
-  }
-
-  return summary;
 }
 
 function rerankMemoryHit(hit, options = {}) {
@@ -321,7 +299,7 @@ function createQdrantMemoryProvider({ config, logger, memoryStore = null, retrie
         userScope: config.memory.userScope,
       });
 
-      logger.info("[memory] Retrieved Qdrant memories", {
+      logger.debug("[memory] Memory search finished", {
         retrievalProfile,
         primaryQueryLength: queries.primary.length,
         continuityQueryLength: queries.continuity.length,
@@ -330,7 +308,7 @@ function createQdrantMemoryProvider({ config, logger, memoryStore = null, retrie
         userScope: config.memory.userScope,
       });
 
-      logger.debug("[memory] Qdrant memory candidates", {
+      logger.debug("[memory] Memory search candidates", {
         queryPreview: {
           primary: queries.primary.slice(0, 120),
           continuity: queries.continuity.slice(0, 120),
@@ -338,27 +316,14 @@ function createQdrantMemoryProvider({ config, logger, memoryStore = null, retrie
         candidates: rankedHits.map(summarizeMemoryHit),
       });
 
-      logger.debug("[memory] Qdrant memories selected for prompt", {
-        selected: memories.map((memory) => {
-          const summary = {
-            memoryId: memory.memoryId,
-            title: memory.title,
-            memoryType: memory.memoryType,
-            domain: memory.domain,
-            score: memory.score,
-            layerBonus: memory.layerBonus,
-            decayPenalty: memory.decayPenalty,
-            weightedScore: memory.weightedScore,
-            retrievalLayer: memory.retrievalLayer,
-            retrievalLane: memory.retrievalLane,
-          };
-
-          if (memory.referenceDate) {
-            summary.referenceDate = memory.referenceDate;
-          }
-
-          return summary;
-        }),
+      logger.debug("[memory] Memories selected for this reply", {
+        selected: memories.map((memory) => ({
+          memoryId: memory.memoryId,
+          title: memory.title,
+          memoryType: memory.memoryType,
+          domain: memory.domain,
+          referenceDate: memory.referenceDate || undefined,
+        })),
       });
 
       return memories;

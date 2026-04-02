@@ -50,13 +50,21 @@ function formatMemories(memories) {
   return formatMemorySection("Memories", durableMemories);
 }
 
-function formatTimestamp(value) {
+function formatTimestamp(value, timezone = "UTC") {
   const date = new Date(value);
+  const resolvedTimezone = String(timezone || "").trim() || "UTC";
 
-  return `${date.toISOString()} (${date.toLocaleString("en-GB", {
-    dateStyle: "full",
-    timeStyle: "long",
-  })})`;
+  return `${date.toISOString()} (${new Intl.DateTimeFormat("en-GB", {
+    timeZone: resolvedTimezone,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZoneName: "short",
+  }).format(date)})`;
 }
 
 async function callModel({
@@ -92,10 +100,11 @@ async function callModel({
   const providerConfig = resolveLlmProviderConfig(config, "chat");
   const providerLabel = providerConfig.provider;
   const includeTimeContext = config.chat?.includeTimeContext !== false;
+  const configuredTimezone = config.chat?.timezone || "UTC";
   const useWebSearch = shouldUseWebSearch({ input, automation });
   const totalToolCount = tools.list().length + (useWebSearch ? 1 : 0);
 
-  logger.info("[chat] Calling model", {
+  logger.debug("[chat] Preparing AI reply", {
     provider: providerLabel,
     model: selectedModel,
     mode: mode.name,
@@ -121,8 +130,8 @@ async function callModel({
               `Author: ${input.authorName}`,
               ...(includeTimeContext
                 ? [
-                  `Message timestamp: ${formatTimestamp(input.messageTimestamp)}`,
-                  `Current system time: ${formatTimestamp(now.toISOString())}`,
+                  `Message timestamp: ${formatTimestamp(input.messageTimestamp, configuredTimezone)}`,
+                  `Current system time (${configuredTimezone}): ${formatTimestamp(now.toISOString(), configuredTimezone)}`,
                 ]
                 : []),
               `Input types: ${input.inputTypes.join(", ") || "text"}`,
@@ -152,10 +161,9 @@ async function callModel({
     logger.warn("[chat] OpenAI response did not include output_text");
   }
 
-  logger.info("[chat] Model response received", {
+  logger.debug("[chat] AI reply received", {
     provider: providerLabel,
     model: selectedModel,
-    durationMs: Date.now() - startedAt,
     outputLength: text ? text.length : 0,
     responseId: response.id,
     sourceCount: sources.length,
@@ -179,5 +187,6 @@ async function callModel({
 
 module.exports = {
   formatMemories,
+  formatTimestamp,
   callModel,
 };

@@ -23,7 +23,7 @@ async function registerDiscordCommands({ config, logger = console }) {
     body: commands,
   });
 
-  logger.info("[commands] Discord slash commands registered", {
+  logger.info("[commands] Discord slash commands are ready", {
     guildId: config.discord.guildId,
     commandCount: commands.length,
   });

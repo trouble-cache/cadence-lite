@@ -130,13 +130,13 @@ async function enrichInput({ config, logger, input }) {
     try {
       if (attachment.kind === "audio") {
         if (!audioClient) {
-          logger.warn("[chat] Skipping audio transcription because no transcription-capable LLM API key is configured", {
+          logger.info("[chat] Voice note could not be processed because audio transcription is not configured", {
             name: attachment.name,
           });
           continue;
         }
 
-        logger.info("[chat] Transcribing audio attachment", {
+        logger.info("[chat] Reading a voice note", {
           name: attachment.name,
           transcriptionModel: resolveTranscriptionModel(config),
         });
@@ -144,7 +144,7 @@ async function enrichInput({ config, logger, input }) {
         const text = await transcribeAudioAttachment({ client: audioClient, config, attachment });
 
         if (text) {
-          logger.debug("[chat] Audio transcription completed", {
+          logger.debug("[chat] Voice note transcription completed", {
             name: attachment.name,
             transcriptLength: text.length,
             transcriptPreview: text.slice(0, 160),
@@ -157,7 +157,7 @@ async function enrichInput({ config, logger, input }) {
             text,
           });
         } else {
-          logger.warn("[chat] Audio transcription returned empty text", {
+          logger.warn("[chat] Voice note transcription came back empty", {
             name: attachment.name,
           });
         }
@@ -165,13 +165,13 @@ async function enrichInput({ config, logger, input }) {
 
       if (attachment.kind === "image") {
         if (!imageClient) {
-          logger.warn("[chat] Skipping image analysis because no LLM API key is configured", {
+          logger.info("[chat] Image could not be processed because image analysis is not configured", {
             name: attachment.name,
           });
           continue;
         }
 
-        logger.info("[chat] Analysing image attachment", {
+        logger.info("[chat] Reading an image attachment", {
           name: attachment.name,
           imageModel: resolveImageModel(config),
         });

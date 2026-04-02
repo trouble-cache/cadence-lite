@@ -22,7 +22,7 @@ function createChatPipeline({ config, logger, memory, tools, conversations }) {
         return null;
       }
 
-      logger.debug("[chat] Preprocessed input", {
+      logger.debug("[chat] Message prepared for the chat pipeline", {
         messageId: message.id,
         channelId: message.channelId,
         contentLength: input.content.length,
@@ -60,13 +60,13 @@ function createChatPipeline({ config, logger, memory, tools, conversations }) {
         ? config.chat.historyLimit
         : selectedMode.historyLimit;
       const recentHistory = await loadRecentHistory({ message, limit: historyLimit });
-      logger.debug("[chat] Loaded recent history", {
+      logger.debug("[chat] Recent chat history loaded", {
         messageId: message.id,
         recentHistoryCount: recentHistory.length,
       });
 
       const memories = await retrieveMemory({ memory, message, input, mode: selectedMode, logger });
-      logger.debug("[chat] Retrieved memories", {
+      logger.debug("[chat] Memory retrieval finished", {
         messageId: message.id,
         memoryCount: memories.length,
       });
@@ -84,7 +84,7 @@ function createChatPipeline({ config, logger, memory, tools, conversations }) {
 
       const reply = buildReply({ mode: selectedMode, input, recentHistory, memories, modelOutput });
 
-      logger.info("[chat] Pipeline completed", {
+      logger.debug("[chat] Chat pipeline finished", {
         messageId: message.id,
         mode: selectedMode.name,
         provider: modelOutput.provider,

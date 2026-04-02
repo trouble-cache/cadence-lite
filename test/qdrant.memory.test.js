@@ -263,7 +263,7 @@ test("rerankMemoryHit leaves evergreen memory types unchanged", () => {
   assert.equal(reranked.weightedScore, 0.4);
 });
 
-test("summarizeMemoryHit exposes the fields needed for retrieval debugging", () => {
+test("summarizeMemoryHit keeps retrieval debugging readable", () => {
   const summary = summarizeMemoryHit({
     score: 0.91,
     layerBonus: 0.12,
@@ -280,16 +280,10 @@ test("summarizeMemoryHit exposes the fields needed for retrieval debugging", () 
   });
 
   assert.deepEqual(summary, {
-    memoryId: "a1",
-    title: "Anchor 1",
     memoryType: "anchor",
     domain: "lore",
-    importance: 5,
-    score: 0.91,
-    layerBonus: 0.12,
+    title: "Anchor 1",
     weightedScore: 1.16,
-    retrievalLayer: "primary",
-    decayPenalty: 0.02,
   });
 });
 

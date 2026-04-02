@@ -5,6 +5,7 @@ const {
   parseBasicAuthHeader,
   parseMultipartFormData,
   buildMemoryExportPayload,
+  buildAppSettingsExportPayload,
   buildMemoryImportRecords,
   normalizeTheme,
   buildAdminLocation,
@@ -143,6 +144,11 @@ test("renderLiteAdminPage shows the settings view with persisted runtime control
   assert.match(page, /Backup &amp; Restore Memories/);
   assert.match(page, /Import Memories/);
   assert.match(page, /Export Memories/);
+  assert.match(page, /Backup App Settings/);
+  assert.match(page, /Export App Settings/);
+  assert.match(page, /saved settings, automations, and journals/i);
+  assert.match(page, /does not include durable memories or conversation history/i);
+  assert.match(page, /\/admin\/exports\/app-settings\?theme=dark/);
   assert.match(page, /Rebuild Memory Index/);
   assert.match(page, /This does not delete the source memories stored in Postgres/i);
   assert.match(page, /Setup &amp; Maintenance/);
@@ -284,6 +290,61 @@ test("buildMemoryImportRecords accepts export-shaped JSON and leaves blank ids u
   assert.equal(records[0].memory_type, "anchor");
   assert.equal(records[0].domain, "routines");
   assert.equal(records[0].source, "manual_admin");
+});
+
+test("buildAppSettingsExportPayload keeps non-memory app data useful for backup", () => {
+  const payload = buildAppSettingsExportPayload({
+    config: {},
+    settings: {
+      "chat.timezone": "Europe/London",
+      "chat.historyLimit": 16,
+    },
+    automations: [
+      {
+        automationId: "auto-1",
+        userScope: "discord:georgia",
+        type: "check_in",
+        label: "Morning check-in",
+        channelId: "123456",
+        scheduleTime: "09:30",
+        timezone: "Europe/London",
+        prompt: "Send a check-in.",
+        enabled: true,
+        mentionUser: false,
+        userId: null,
+        lastRunAt: "2026-03-29T08:30:00.000Z",
+        lastError: "",
+        createdAt: "2026-03-20T08:00:00.000Z",
+        updatedAt: "2026-03-29T08:30:00.000Z",
+      },
+    ],
+    journalEntries: [
+      {
+        entryId: "journal-1",
+        userScope: "discord:georgia",
+        automationId: "auto-1",
+        channelId: "123456",
+        guildId: "654321",
+        title: "Journal entry",
+        content: "A continuity note.",
+        createdAt: "2026-03-29T21:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(payload.product, "cadence-lite");
+  assert.equal(payload.exportType, "app_settings");
+  assert.deepEqual(payload.includes, ["app_settings", "automations", "journal_entries"]);
+  assert.deepEqual(payload.counts, {
+    settings: 2,
+    automations: 1,
+    journalEntries: 1,
+  });
+  assert.equal(payload.settings["chat.timezone"], "Europe/London");
+  assert.equal(payload.automations[0].automationId, "auto-1");
+  assert.equal(payload.journalEntries[0].entryId, "journal-1");
+  assert.equal("memories" in payload, false);
+  assert.equal("conversationHistory" in payload, false);
 });
 
 test("renderLiteAdminPage shows the proactive shell", () => {
