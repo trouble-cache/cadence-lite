@@ -40,11 +40,36 @@ const RETRIEVAL_PROFILES = Object.freeze({
 function summarizeMemoryHit(hit) {
   const payload = hit.payload || {};
   return {
-    memoryType: payload.memory_type || "unknown",
-    domain: payload.domain || "general",
     title: payload.title || "(untitled memory)",
+    type: payload.memory_type || "unknown",
+    domain: payload.domain || "general",
     weightedScore: Number(Number(hit.weightedScore || 0).toFixed(2)),
   };
+}
+
+function formatMemoryDebugEntry(memory) {
+  const title = memory.title || "(untitled memory)";
+  const type = memory.type || memory.memoryType || "unknown";
+  const domain = memory.domain || "general";
+  const weightScore = Number(Number(memory.weightedScore || 0).toFixed(2));
+
+  return `${title} | ${type} | ${domain} | ${weightScore}`;
+}
+
+function summarizeSelectedMemoryTypes(memories) {
+  return memories.reduce((summary, memory) => {
+    const type = memory.memoryType || memory.type;
+
+    if (type === "anchor" || type === "canon" || type === "resolved") {
+      summary[type] += 1;
+    }
+
+    return summary;
+  }, {
+    anchor: 0,
+    canon: 0,
+    resolved: 0,
+  });
 }
 
 function rerankMemoryHit(hit, options = {}) {
@@ -309,21 +334,19 @@ function createQdrantMemoryProvider({ config, logger, memoryStore = null, retrie
       });
 
       logger.debug("[memory] Memory search candidates", {
-        queryPreview: {
-          primary: queries.primary.slice(0, 120),
-          continuity: queries.continuity.slice(0, 120),
-        },
-        candidates: rankedHits.map(summarizeMemoryHit),
+        primaryQuery: queries.primary.slice(0, 120),
+        continuityQuery: queries.continuity.slice(0, 120),
+        entries: rankedHits.map((hit) => formatMemoryDebugEntry(summarizeMemoryHit(hit))),
       });
 
       logger.debug("[memory] Memories selected for this reply", {
-        selected: memories.map((memory) => ({
-          memoryId: memory.memoryId,
+        entries: memories.map((memory) => formatMemoryDebugEntry({
           title: memory.title,
           memoryType: memory.memoryType,
           domain: memory.domain,
-          referenceDate: memory.referenceDate || undefined,
+          weightedScore: memory.weightedScore || 0,
         })),
+        totals: summarizeSelectedMemoryTypes(memories),
       });
 
       return memories;

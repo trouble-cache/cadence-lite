@@ -280,9 +280,9 @@ test("summarizeMemoryHit keeps retrieval debugging readable", () => {
   });
 
   assert.deepEqual(summary, {
-    memoryType: "anchor",
-    domain: "lore",
     title: "Anchor 1",
+    type: "anchor",
+    domain: "lore",
     weightedScore: 1.16,
   });
 });
