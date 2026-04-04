@@ -20,6 +20,8 @@ const SUPPORTED_SOURCES = Object.freeze([
   "cadence",
 ]);
 
+const DEFAULT_HISTORY_LIMIT = 20;
+
 const CREATE_CONVERSATION_EVENTS_TABLE_SQL = `
   CREATE TABLE IF NOT EXISTS conversation_events (
     id BIGSERIAL PRIMARY KEY,
@@ -291,8 +293,28 @@ function getThreadId(channel) {
   return null;
 }
 
+function normalizeConversationValue(value) {
+  const normalized = String(value || "").trim();
+  return normalized || null;
+}
+
+function resolveConversationScope({ conversationId = null, threadId = null, channelId = null } = {}) {
+  const normalizedConversationId = normalizeConversationValue(conversationId);
+  const normalizedThreadId = normalizeConversationValue(threadId);
+  const normalizedChannelId = normalizeConversationValue(channelId);
+
+  return {
+    conversationId: normalizedConversationId || normalizedThreadId || normalizedChannelId,
+    threadId: normalizedThreadId,
+    channelId: normalizedChannelId,
+  };
+}
+
 function getConversationId(message) {
-  return getThreadId(message.channel) || message.channelId;
+  return resolveConversationScope({
+    threadId: getThreadId(message.channel),
+    channelId: message.channelId,
+  }).conversationId;
 }
 
 function buildMessageMetadata(message, extraMetadata = {}) {
@@ -733,9 +755,24 @@ function createConversationStore({ config, logger }) {
       return events.map(mapEventToHistoryItem);
     },
 
-    async listRecentHistoryByConversationId({ conversationId, limit = 8 }) {
-      const events = await this.listEventsByConversationId({
+    async listRecentHistoryByConversationId({
+      conversationId,
+      threadId = null,
+      channelId = null,
+      limit = DEFAULT_HISTORY_LIMIT,
+    }) {
+      const scope = resolveConversationScope({
         conversationId,
+        threadId,
+        channelId,
+      });
+
+      if (!scope.conversationId) {
+        return [];
+      }
+
+      const events = await this.listEventsByConversationId({
+        conversationId: scope.conversationId,
         limit: Math.max(limit * 3, limit + 5),
       });
 
@@ -758,6 +795,7 @@ module.exports = {
   SUPPORTED_EVENT_TYPES,
   SUPPORTED_ROLES,
   SUPPORTED_SOURCES,
+  DEFAULT_HISTORY_LIMIT,
   buildEventContentText,
   buildConversationSummary,
   buildConversationExportHeader,
@@ -766,5 +804,6 @@ module.exports = {
   mapEventToHistoryItem,
   formatEventAsPlainText,
   getConversationLabel,
+  resolveConversationScope,
   validateEventInput,
 };

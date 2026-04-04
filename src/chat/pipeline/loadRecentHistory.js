@@ -15,7 +15,7 @@ function buildMessageContent(message) {
   return parts.join(" ").trim();
 }
 
-async function loadRecentHistory({ message, limit = 8 }) {
+async function loadRecentHistory({ message, limit = 20 }) {
   const fetchLimit = Math.max(limit + 1, 2);
   const recentMessages = await message.channel.messages.fetch({ limit: fetchLimit });
 

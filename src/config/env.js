@@ -64,7 +64,6 @@ function loadConfig() {
       token: process.env.DISCORD_TOKEN || "",
       clientId: process.env.DISCORD_CLIENT_ID || "",
       guildId: process.env.DISCORD_GUILD_ID || "",
-      allowedChannelId: process.env.DISCORD_ALLOWED_CHANNEL_ID || "",
       respondToMentionsOnly: readBoolean(process.env.DISCORD_RESPOND_TO_MENTIONS_ONLY, false),
     },
     chat: {

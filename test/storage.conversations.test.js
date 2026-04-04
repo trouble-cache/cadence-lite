@@ -2,12 +2,14 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
+  DEFAULT_HISTORY_LIMIT,
   buildEventContentText,
   buildConversationExportHeader,
   buildConversationSummary,
   formatConversationExport,
   mapEventToHistoryItem,
   formatEventAsPlainText,
+  resolveConversationScope,
   validateEventInput,
 } = require("../src/storage/conversations");
 
@@ -171,4 +173,45 @@ test("formatConversationExport builds a readable archive with optional filtering
   assert.match(fullExport, /# Conversation Export/);
   assert.match(fullExport, /\[image_analysis\] A map on the table\./);
   assert.match(fullExport, /\[summary_daily\] Summary text/);
+});
+
+test("resolveConversationScope prefers thread and accepts either thread or channel ids", () => {
+  assert.deepEqual(
+    resolveConversationScope({
+      threadId: "thread-1",
+      channelId: "channel-1",
+    }),
+    {
+      conversationId: "thread-1",
+      threadId: "thread-1",
+      channelId: "channel-1",
+    },
+  );
+
+  assert.deepEqual(
+    resolveConversationScope({
+      channelId: "channel-1",
+    }),
+    {
+      conversationId: "channel-1",
+      threadId: null,
+      channelId: "channel-1",
+    },
+  );
+
+  assert.deepEqual(
+    resolveConversationScope({
+      conversationId: "thread-2",
+      channelId: "channel-1",
+    }),
+    {
+      conversationId: "thread-2",
+      threadId: null,
+      channelId: "channel-1",
+    },
+  );
+});
+
+test("conversation history defaults stay pinned to 20", () => {
+  assert.equal(DEFAULT_HISTORY_LIMIT, 20);
 });

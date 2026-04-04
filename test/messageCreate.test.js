@@ -34,7 +34,6 @@ test("createMessageCreateHandler ignores Discord system messages", async () => {
   const handler = createMessageCreateHandler({
     config: {
       discord: {
-        allowedChannelId: "",
         respondToMentionsOnly: false,
       },
       chat: {},
@@ -71,7 +70,6 @@ test("createMessageCreateHandler passes the default mode into the pipeline", asy
   const handler = createMessageCreateHandler({
     config: {
       discord: {
-        allowedChannelId: "",
         respondToMentionsOnly: false,
       },
       chat: {},
@@ -129,4 +127,76 @@ test("createMessageCreateHandler passes the default mode into the pipeline", asy
   });
 
   assert.equal(receivedMode.name, "default");
+});
+
+test("createMessageCreateHandler processes thread messages", async () => {
+  let pipelineRuns = 0;
+  const recordedEvents = [];
+  const handler = createMessageCreateHandler({
+    config: {
+      discord: {
+        respondToMentionsOnly: false,
+      },
+      chat: {},
+    },
+    logger: {
+      info() {},
+      warn() {},
+      error() {},
+    },
+    chatPipeline: {
+      async run() {
+        pipelineRuns += 1;
+        return "thread reply";
+      },
+    },
+    conversations: {
+      async recordEvent(event) {
+        recordedEvents.push(event);
+      },
+    },
+  });
+
+  await handler({
+    id: "message-2",
+    system: false,
+    inGuild: () => true,
+    guildId: "guild-1",
+    channelId: "thread-1",
+    content: "hello from a thread",
+    author: { bot: false, id: "user-1", username: "Georgia" },
+    member: { displayName: "Georgia" },
+    channel: {
+      id: "thread-1",
+      parentId: "channel-1",
+      isThread: () => true,
+      async sendTyping() {},
+      async send(payload) {
+        return {
+          id: "reply-2",
+          channelId: "thread-1",
+          guildId: "guild-1",
+          author: { username: "Cadence" },
+          member: { displayName: "Cadence" },
+          channel: this,
+          ...payload,
+        };
+      },
+    },
+    mentions: {
+      users: {
+        has() {
+          return false;
+        },
+      },
+    },
+    client: {
+      user: {
+        id: "bot-1",
+      },
+    },
+  });
+
+  assert.equal(pipelineRuns, 1);
+  assert.equal(recordedEvents.length, 2);
 });

@@ -110,10 +110,6 @@ function createMessageCreateHandler({ config, logger, chatPipeline, conversation
       return;
     }
 
-    if (config.discord.allowedChannelId && message.channelId !== config.discord.allowedChannelId) {
-      return;
-    }
-
     const botUserId = message.client.user?.id;
     const wasMentioned = Boolean(botUserId && message.mentions.users.has(botUserId));
     const conversationId = message.channel.isThread?.() ? message.channel.id : message.channelId;

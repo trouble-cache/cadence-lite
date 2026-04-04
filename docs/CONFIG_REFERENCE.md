@@ -42,9 +42,6 @@ Depending on the template shape, the internal Postgres service may also carry it
 - `DISCORD_GUILD_ID`
   Discord server ID used for guild command registration.
 
-- `DISCORD_ALLOWED_CHANNEL_ID`
-  Optional channel restriction. If set, Cadence only responds in that channel or thread context.
-
 - `DISCORD_RESPOND_TO_MENTIONS_ONLY`
   Optional safety flag. If `true`, Cadence only responds when mentioned.
 

@@ -323,7 +323,7 @@ async function runCheckInAutomation({
   const mode = DEFAULT_CHAT_MODE;
   const historyLimit = Number.isFinite(config.chat?.historyLimit)
     ? config.chat.historyLimit
-    : (mode.historyLimit || 8);
+    : (mode.historyLimit || 20);
   const input = buildAutomationInput({ automation });
   const recentHistory = await loadAutomationRecentHistory({
     channel,
