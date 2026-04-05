@@ -17,13 +17,13 @@ function formatRecentHistory(recentHistory) {
 }
 
 function formatHistoryItem(item) {
-  const author = item.authorName || item.author?.username || item.role || "unknown";
   const content = String(item.content || item.text || "").trim();
 
   if (!content) {
     return "";
   }
 
+  const author = item.authorName || item.author?.username || item.role || "unknown";
   const labels = [];
 
   if (item.eventType && item.eventType !== "message") {
@@ -38,7 +38,7 @@ function formatHistoryItem(item) {
     return `${author} [${labels.join(", ")}]: ${content}`;
   }
 
-  return `${author}: ${content}`;
+  return content;
 }
 
 function formatMemoryLine(memory, index) {

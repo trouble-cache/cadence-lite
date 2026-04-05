@@ -95,9 +95,9 @@ test("buildModelInput separates prior turns, background context, and final user 
 
   assert.equal(input.length, 5);
   assert.equal(input[0].role, "user");
-  assert.equal(input[0].content[0].text, "Georgia: I fixed the first bit.");
+  assert.equal(input[0].content[0].text, "I fixed the first bit.");
   assert.equal(input[1].role, "assistant");
-  assert.equal(input[1].content[0].text, "Cadence: Good. What's still misbehaving?");
+  assert.equal(input[1].content[0].text, "Good. What's still misbehaving?");
   assert.equal(input[2].role, "system");
   assert.match(input[2].content[0].text, /Cadence \[image_analysis, cadence\]: \[image_analysis\] A railway map on the desk\./);
   assert.equal(input[3].role, "system");
@@ -105,4 +105,39 @@ test("buildModelInput separates prior turns, background context, and final user 
   assert.doesNotMatch(input[3].content[0].text, /Recent history:/);
   assert.equal(input[4].role, "user");
   assert.equal(input[4].content[0].text, "What should I do next?");
+});
+
+test("buildModelInput keeps transcript labels off ordinary prior turns", () => {
+  const input = buildModelInput({
+    input: {
+      content: "Latest turn",
+      authorName: "Georgia",
+      inputTypes: ["text"],
+      messageTimestamp: "2026-03-20T10:00:00.000Z",
+    },
+    recentHistory: [
+      {
+        role: "user",
+        authorName: "Georgia",
+        content: "testing we havent broken you",
+      },
+      {
+        role: "assistant",
+        authorName: "Cadence",
+        content: "Not broken.",
+      },
+    ],
+    memories: [],
+    contextSections: [],
+    totalToolCount: 0,
+    includeTimeContext: false,
+    configuredTimezone: "Europe/London",
+    now: new Date("2026-03-20T10:05:00.000Z"),
+    automation: null,
+  });
+
+  assert.equal(input[0].content[0].text, "testing we havent broken you");
+  assert.equal(input[1].content[0].text, "Not broken.");
+  assert.doesNotMatch(input[0].content[0].text, /^Georgia:/);
+  assert.doesNotMatch(input[1].content[0].text, /^Cadence:/);
 });
