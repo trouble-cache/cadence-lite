@@ -16,6 +16,31 @@ function formatRecentHistory(recentHistory) {
     .join("\n");
 }
 
+function formatHistoryItem(item) {
+  const author = item.authorName || item.author?.username || item.role || "unknown";
+  const content = String(item.content || item.text || "").trim();
+
+  if (!content) {
+    return "";
+  }
+
+  const labels = [];
+
+  if (item.eventType && item.eventType !== "message") {
+    labels.push(item.eventType);
+  }
+
+  if (item.source && item.source !== "discord") {
+    labels.push(item.source);
+  }
+
+  if (labels.length) {
+    return `${author} [${labels.join(", ")}]: ${content}`;
+  }
+
+  return `${author}: ${content}`;
+}
+
 function formatMemoryLine(memory, index) {
   if (typeof memory === "string") {
     return `${index + 1}. ${memory}`;
@@ -48,6 +73,109 @@ function formatMemories(memories) {
   });
 
   return formatMemorySection("Memories", durableMemories);
+}
+
+function buildBackgroundContext({
+  input,
+  contextSections = [],
+  memories,
+  totalToolCount,
+  includeTimeContext,
+  configuredTimezone,
+  now,
+  automation,
+}) {
+  const sections = [
+    `Author: ${input.authorName}`,
+    `Input types: ${input.inputTypes.join(", ") || "text"}`,
+    ...contextSections
+      .filter((section) => section?.label && String(section.content || "").trim())
+      .map((section) => `${section.label}:\n${String(section.content).trim()}`),
+    `Relevant memories:\n${formatMemories(memories)}`,
+    `Available tool count: ${totalToolCount}`,
+  ];
+
+  if (automation) {
+    sections.unshift("This turn came from an automation trigger rather than a live user message.");
+  }
+
+  if (includeTimeContext) {
+    sections.splice(1, 0,
+      `Message timestamp: ${formatTimestamp(input.messageTimestamp, configuredTimezone)}`,
+      `Current system time (${configuredTimezone}): ${formatTimestamp(now.toISOString(), configuredTimezone)}`,
+    );
+  }
+
+  return sections.join("\n\n");
+}
+
+function mapHistoryRole(item) {
+  if (item.role === "assistant") {
+    return "assistant";
+  }
+
+  if (item.role === "system") {
+    return "system";
+  }
+
+  return "user";
+}
+
+function buildModelInput({
+  input,
+  recentHistory,
+  memories,
+  contextSections,
+  totalToolCount,
+  includeTimeContext,
+  configuredTimezone,
+  now,
+  automation,
+}) {
+  const priorTurns = recentHistory
+    .map((item) => ({
+      role: mapHistoryRole(item),
+      content: [
+        {
+          type: "input_text",
+          text: formatHistoryItem(item),
+        },
+      ],
+    }))
+    .filter((item) => item.content[0].text);
+
+  const backgroundContext = buildBackgroundContext({
+    input,
+    contextSections,
+    memories,
+    totalToolCount,
+    includeTimeContext,
+    configuredTimezone,
+    now,
+    automation,
+  });
+
+  return [
+    ...priorTurns,
+    {
+      role: "system",
+      content: [
+        {
+          type: "input_text",
+          text: backgroundContext,
+        },
+      ],
+    },
+    {
+      role: "user",
+      content: [
+        {
+          type: "input_text",
+          text: input.content,
+        },
+      ],
+    },
+  ];
 }
 
 function formatTimestamp(value, timezone = "UTC") {
@@ -119,33 +247,17 @@ async function callModel({
   const request = {
     model: selectedModel,
     instructions: buildSystemPrompt({ config, mode, automation, webSearchUsed: useWebSearch }),
-    input: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: [
-              `${automation ? "Automation trigger" : "User message"}: ${input.content}`,
-              `Author: ${input.authorName}`,
-              ...(includeTimeContext
-                ? [
-                  `Message timestamp: ${formatTimestamp(input.messageTimestamp, configuredTimezone)}`,
-                  `Current system time (${configuredTimezone}): ${formatTimestamp(now.toISOString(), configuredTimezone)}`,
-                ]
-                : []),
-              `Input types: ${input.inputTypes.join(", ") || "text"}`,
-              ...contextSections
-                .filter((section) => section?.label && String(section.content || "").trim())
-                .map((section) => `${section.label}:\n${String(section.content).trim()}`),
-              `Recent history:\n${formatRecentHistory(recentHistory)}`,
-              `Relevant memories:\n${formatMemories(memories)}`,
-              `Available tool count: ${totalToolCount}`,
-            ].join("\n\n"),
-          },
-        ],
-      },
-    ],
+    input: buildModelInput({
+      input,
+      recentHistory,
+      memories,
+      contextSections,
+      totalToolCount,
+      includeTimeContext,
+      configuredTimezone,
+      now,
+      automation,
+    }),
   };
 
   if (useWebSearch) {
@@ -186,6 +298,9 @@ async function callModel({
 }
 
 module.exports = {
+  buildModelInput,
+  buildBackgroundContext,
+  formatHistoryItem,
   formatMemories,
   formatTimestamp,
   callModel,

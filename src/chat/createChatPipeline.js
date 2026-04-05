@@ -59,13 +59,24 @@ function createChatPipeline({ config, logger, memory, tools, conversations }) {
       const historyLimit = Number.isFinite(config.chat?.historyLimit)
         ? config.chat.historyLimit
         : (selectedMode.historyLimit || 20);
-      const recentHistory = await loadRecentHistory({ message, limit: historyLimit });
+      const recentHistory = await loadRecentHistory({
+        message,
+        limit: historyLimit,
+        conversations,
+      });
       logger.debug("[chat] Recent chat history loaded", {
         messageId: message.id,
         recentHistoryCount: recentHistory.length,
       });
 
-      const memories = await retrieveMemory({ memory, message, input, mode: selectedMode, logger });
+      const memories = await retrieveMemory({
+        memory,
+        message,
+        input,
+        mode: selectedMode,
+        logger,
+        recentHistory,
+      });
       logger.debug("[chat] Memory retrieval finished", {
         messageId: message.id,
         memoryCount: memories.length,

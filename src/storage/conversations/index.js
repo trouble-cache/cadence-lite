@@ -429,7 +429,7 @@ function createConversationStore({ config, logger }) {
       );
     },
 
-    async listEventsByConversationId({ conversationId, limit = 500 }) {
+    async listEventsByConversationId({ conversationId, limit = 500, newestFirst = false }) {
       const { rows } = await pool.query(
         `
           SELECT
@@ -449,13 +449,13 @@ function createConversationStore({ config, logger }) {
             created_at
           FROM conversation_events
           WHERE conversation_id = $1
-          ORDER BY created_at ASC
+          ORDER BY created_at ${newestFirst ? "DESC" : "ASC"}
           LIMIT $2
         `,
         [conversationId, limit],
       );
 
-      return rows;
+      return newestFirst ? rows.reverse() : rows;
     },
 
     async listConversations({ limit = 20 }) {
@@ -774,6 +774,7 @@ function createConversationStore({ config, logger }) {
       const events = await this.listEventsByConversationId({
         conversationId: scope.conversationId,
         limit: Math.max(limit * 3, limit + 5),
+        newestFirst: true,
       });
 
       return events
