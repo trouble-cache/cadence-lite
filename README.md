@@ -12,6 +12,7 @@
   <a href="docs/LITE_SETUP_GUIDE.md">Setup Guide</a> ·
   <a href="docs/CURRENT_MODEL_RECS.md">Model Recommendations</a> ·
   <a href="docs/CONFIG_REFERENCE.md">Config Reference</a> ·
+  <a href="docs/CHANGELOG.md">Changelog</a> ·
   <a href="SUPPORT.md">Support</a>
 </p>
 
@@ -71,6 +72,10 @@ If you want the current recommended starter models, see:
 If you want the configuration and technical reference, see:
 
 - [Configuration Reference](docs/CONFIG_REFERENCE.md)
+
+If you want a running note of meaningful post-release fixes and behaviour changes, see:
+
+- [Changelog](docs/CHANGELOG.md)
 
 If you want local scripts and maintenance tools, see:
 
