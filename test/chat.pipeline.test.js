@@ -566,3 +566,140 @@ test("createChatPipeline reuses scoped recent history for memory retrieval", asy
     }
   }
 });
+
+test("createChatPipeline continues when memory retrieval fails", async () => {
+  const pipelinePath = require.resolve("../src/chat/createChatPipeline");
+  const enrichInputPath = require.resolve("../src/chat/pipeline/enrichInput");
+  const loadRecentHistoryPath = require.resolve("../src/chat/pipeline/loadRecentHistory");
+  const retrieveMemoryPath = require.resolve("../src/chat/pipeline/retrieveMemory");
+  const callModelPath = require.resolve("../src/chat/pipeline/callModel");
+  const buildReplyPath = require.resolve("../src/chat/pipeline/buildReply");
+
+  const originalEnrichModule = require.cache[enrichInputPath];
+  const originalLoadRecentHistoryModule = require.cache[loadRecentHistoryPath];
+  const originalRetrieveModule = require.cache[retrieveMemoryPath];
+  const originalCallModelModule = require.cache[callModelPath];
+  const originalBuildReplyModule = require.cache[buildReplyPath];
+  const originalPipelineModule = require.cache[pipelinePath];
+
+  let receivedMemories = null;
+  const loggedErrors = [];
+
+  require.cache[enrichInputPath] = {
+    exports: {
+      enrichInput: async ({ input }) => input,
+    },
+  };
+
+  require.cache[loadRecentHistoryPath] = {
+    exports: {
+      loadRecentHistory: async () => [],
+    },
+  };
+
+  require.cache[retrieveMemoryPath] = {
+    exports: {
+      retrieveMemory: async () => {
+        throw new Error("Embedding response did not include a data array.");
+      },
+    },
+  };
+
+  require.cache[callModelPath] = {
+    exports: {
+      callModel: async ({ memories }) => {
+        receivedMemories = memories;
+        return { provider: "test", text: "stub reply", summary: {} };
+      },
+    },
+  };
+
+  require.cache[buildReplyPath] = {
+    exports: {
+      buildReply: () => "stub reply",
+    },
+  };
+
+  delete require.cache[pipelinePath];
+  const { createChatPipeline } = require("../src/chat/createChatPipeline");
+
+  const pipeline = createChatPipeline({
+    config: {},
+    logger: {
+      debug() {},
+      info() {},
+      warn() {},
+      error(message, payload) {
+        loggedErrors.push({ message, payload });
+      },
+    },
+    memory: {},
+    tools: { list: () => [] },
+    conversations: {
+      async recordEvent() {},
+    },
+  });
+
+  const message = {
+    id: "msg-memory-fail-1",
+    content: "hello there",
+    channelId: "channel-1",
+    guildId: "guild-1",
+    createdTimestamp: Date.parse("2026-03-20T10:00:00.000Z"),
+    createdAt: new Date("2026-03-20T10:00:00.000Z"),
+    client: { user: { id: "bot-1" } },
+    author: { id: "user-1", username: "georgia", globalName: "Georgia" },
+    member: { displayName: "Georgia" },
+    attachments: new Map(),
+    channel: {
+      isThread: () => false,
+      messages: {
+        fetch: async () => [],
+      },
+    },
+  };
+
+  try {
+    const reply = await pipeline.run({ message });
+    assert.equal(reply, "stub reply");
+    assert.deepEqual(receivedMemories, []);
+    assert.equal(loggedErrors.length, 1);
+    assert.equal(loggedErrors[0].message, "[chat] Memory retrieval failed; continuing without memories");
+  } finally {
+    if (originalEnrichModule) {
+      require.cache[enrichInputPath] = originalEnrichModule;
+    } else {
+      delete require.cache[enrichInputPath];
+    }
+
+    if (originalLoadRecentHistoryModule) {
+      require.cache[loadRecentHistoryPath] = originalLoadRecentHistoryModule;
+    } else {
+      delete require.cache[loadRecentHistoryPath];
+    }
+
+    if (originalRetrieveModule) {
+      require.cache[retrieveMemoryPath] = originalRetrieveModule;
+    } else {
+      delete require.cache[retrieveMemoryPath];
+    }
+
+    if (originalCallModelModule) {
+      require.cache[callModelPath] = originalCallModelModule;
+    } else {
+      delete require.cache[callModelPath];
+    }
+
+    if (originalBuildReplyModule) {
+      require.cache[buildReplyPath] = originalBuildReplyModule;
+    } else {
+      delete require.cache[buildReplyPath];
+    }
+
+    if (originalPipelineModule) {
+      require.cache[pipelinePath] = originalPipelineModule;
+    } else {
+      delete require.cache[pipelinePath];
+    }
+  }
+});

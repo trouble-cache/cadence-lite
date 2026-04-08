@@ -1,6 +1,6 @@
 const { DEFAULT_CHAT_MODE } = require("../chat/defaultMode");
 const { callModel } = require("../chat/pipeline/callModel");
-const { buildMemoryQueries } = require("../chat/pipeline/retrieveMemory");
+const { buildMemoryQueries, buildRecentUserContext } = require("../chat/pipeline/retrieveMemory");
 const { splitTextIntoChunks } = require("../bot/events/messageCreate");
 const { normalizeAttachments, summarizeAttachments } = require("../utils/attachments");
 const { buildEventContentText } = require("../storage");
@@ -72,6 +72,20 @@ function shuffleInPlace(items, randomFn = Math.random) {
 function buildJournalConversationLabel(event) {
   const metadata = event?.metadata || {};
   return metadata.threadName || metadata.channelName || event.conversation_id || "recent conversation";
+}
+
+function pickRandomContiguousWindow(events = [], maxMessagesPerSlice = 8, randomFn = Math.random) {
+  if (events.length <= maxMessagesPerSlice) {
+    return [...events];
+  }
+
+  const maxStartIndex = events.length - maxMessagesPerSlice;
+  const startIndex = Math.max(0, Math.min(
+    maxStartIndex,
+    Math.floor(randomFn() * (maxStartIndex + 1)),
+  ));
+
+  return events.slice(startIndex, startIndex + maxMessagesPerSlice);
 }
 
 function buildJournalSliceContent(events = [], { config } = {}) {
@@ -154,7 +168,7 @@ function selectJournalConversationSlices({
     .map((conversationEvents) => ({
       label: buildJournalConversationLabel(conversationEvents[0]),
       latestAt: conversationEvents[conversationEvents.length - 1].created_at,
-      events: conversationEvents.slice(-maxMessagesPerSlice),
+      events: pickRandomContiguousWindow(conversationEvents, maxMessagesPerSlice, randomFn),
     }))
     .sort((left, right) => Date.parse(right.latestAt) - Date.parse(left.latestAt));
 
@@ -199,12 +213,15 @@ async function loadJournalContextSections({
       limit: 5,
     });
 
-    return recentEntries.length
+    return {
+      selectedSlice: null,
+      sections: recentEntries.length
       ? [{
         label: "Recent journal entries",
         content: buildRecentJournalEntriesContent(recentEntries),
       }]
-      : [];
+      : [],
+    };
   }
 
   const recentEntries = await journalStore.listRecentEntries({
@@ -227,7 +244,10 @@ async function loadJournalContextSections({
     });
   }
 
-  return sections;
+  return {
+    selectedSlice: slices[0],
+    sections,
+  };
 }
 
 function buildHistoryContent(message) {
@@ -267,11 +287,13 @@ async function loadAutomationRecentHistory({ channel, limit = 8, now = new Date(
 
 async function retrieveAutomationMemories({ memory, channel, input, mode }) {
   const recentMessages = await channel.messages.fetch({ limit: 8 });
-  const recentUserMessages = recentMessages
+  const recentUserContext = buildRecentUserContext(recentMessages
     .filter((item) => !item.author?.bot && item.content?.trim())
     .sort((left, right) => left.createdTimestamp - right.createdTimestamp)
-    .map((item) => item.content.trim())
-    .slice(-2);
+    .map((item) => ({
+      role: "user",
+      content: item.content.trim(),
+    })));
 
   return memory.retrieve({
     guildId: channel.guildId,
@@ -279,7 +301,55 @@ async function retrieveAutomationMemories({ memory, channel, input, mode }) {
     query: buildMemoryQueries({
       input,
       mode,
-      recentUserMessages,
+      recentUserContext,
+    }),
+    mode: mode.name,
+  });
+}
+
+function buildJournalSliceMemoryQuery({ slice, input, mode }) {
+  const userEvents = Array.isArray(slice?.events)
+    ? slice.events.filter((event) => event.role === "user")
+    : [];
+
+  if (!userEvents.length) {
+    return buildMemoryQueries({
+      input,
+      mode,
+      recentUserContext: "",
+    });
+  }
+
+  const latestUserEvent = userEvents[userEvents.length - 1];
+  const earlierUserEvents = userEvents.slice(0, -1).map((event) => ({
+    role: "user",
+    content: buildEventContentText(event),
+  }));
+
+  return buildMemoryQueries({
+    input: {
+      ...input,
+      content: buildEventContentText(latestUserEvent),
+    },
+    mode,
+    recentUserContext: buildRecentUserContext(earlierUserEvents),
+  });
+}
+
+async function retrieveJournalMemories({
+  memory,
+  channel,
+  input,
+  mode,
+  selectedSlice = null,
+}) {
+  return memory.retrieve({
+    guildId: channel.guildId,
+    userId: input.authorId,
+    query: buildJournalSliceMemoryQuery({
+      slice: selectedSlice,
+      input,
+      mode,
     }),
     mode: mode.name,
   });
@@ -329,12 +399,22 @@ async function runCheckInAutomation({
     channel,
     limit: historyLimit,
   });
-  const memories = await retrieveAutomationMemories({
-    memory,
-    channel,
-    input,
-    mode,
-  });
+  let memories = [];
+
+  try {
+    memories = await retrieveAutomationMemories({
+      memory,
+      channel,
+      input,
+      mode,
+    });
+  } catch (error) {
+    logger.error("[automations] Memory retrieval failed during check-in automation", {
+      automationId: automation.automationId,
+      label: automation.label,
+      error: error.message,
+    }, error);
+  }
   const modelOutput = await callModel({
     config,
     logger,
@@ -413,13 +493,7 @@ async function runJournalAutomation({
   const mode = DEFAULT_CHAT_MODE;
   const input = buildAutomationInput({ automation });
   const recentHistory = [];
-  const memories = await retrieveAutomationMemories({
-    memory,
-    channel,
-    input,
-    mode,
-  });
-  const contextSections = await loadJournalContextSections({
+  const journalContext = await loadJournalContextSections({
     conversations,
     config,
     journalStore,
@@ -427,6 +501,24 @@ async function runJournalAutomation({
     guildId: channel.guildId,
     excludedChannelId: automation.channelId,
   });
+  let memories = [];
+
+  try {
+    memories = await retrieveJournalMemories({
+      memory,
+      channel,
+      input,
+      mode,
+      selectedSlice: journalContext.selectedSlice,
+    });
+  } catch (error) {
+    logger.error("[automations] Memory retrieval failed during journal automation", {
+      automationId: automation.automationId,
+      label: automation.label,
+      error: error.message,
+    }, error);
+  }
+
   const modelOutput = await callModel({
     config,
     logger,
@@ -435,7 +527,7 @@ async function runJournalAutomation({
     recentHistory,
     memories,
     tools,
-    contextSections,
+    contextSections: journalContext.sections,
     automation: {
       type: automation.type,
       label: automation.label,
@@ -610,5 +702,7 @@ module.exports = {
   buildAutomationInput,
   isAutomationDueNow,
   automationRanToday,
+  buildJournalSliceMemoryQuery,
+  pickRandomContiguousWindow,
   selectJournalConversationSlices,
 };

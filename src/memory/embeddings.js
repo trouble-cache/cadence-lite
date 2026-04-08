@@ -15,6 +15,10 @@ async function embedTexts({ config, inputs, client: providedClient }) {
     input: inputs,
   });
 
+  if (!Array.isArray(response?.data)) {
+    throw new Error("Embedding response did not include a data array.");
+  }
+
   return response.data
     .sort((left, right) => left.index - right.index)
     .map((item) => item.embedding);

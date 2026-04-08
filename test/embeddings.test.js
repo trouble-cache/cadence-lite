@@ -41,3 +41,34 @@ test("embedTexts uses the configured embedding model", async () => {
     process.env.OPENROUTER_API_KEY = previousKey;
   }
 });
+
+test("embedTexts throws a clear error when the provider response is malformed", async () => {
+  const previousKey = process.env.OPENROUTER_API_KEY;
+  process.env.OPENROUTER_API_KEY = "or-key";
+
+  try {
+    await assert.rejects(
+      () => embedTexts({
+        config: {
+          llm: {
+            embedding: {
+              provider: "openrouter",
+              model: "openai/text-embedding-3-small",
+            },
+          },
+        },
+        inputs: ["alpha"],
+        client: {
+          embeddings: {
+            async create() {
+              return {};
+            },
+          },
+        },
+      }),
+      /Embedding response did not include a data array\./,
+    );
+  } finally {
+    process.env.OPENROUTER_API_KEY = previousKey;
+  }
+});

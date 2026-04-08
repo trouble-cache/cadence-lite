@@ -69,14 +69,25 @@ function createChatPipeline({ config, logger, memory, tools, conversations }) {
         recentHistoryCount: recentHistory.length,
       });
 
-      const memories = await retrieveMemory({
-        memory,
-        message,
-        input,
-        mode: selectedMode,
-        logger,
-        recentHistory,
-      });
+      let memories = [];
+
+      try {
+        memories = await retrieveMemory({
+          memory,
+          message,
+          input,
+          mode: selectedMode,
+          logger,
+          recentHistory,
+        });
+      } catch (error) {
+        logger.error("[chat] Memory retrieval failed; continuing without memories", {
+          messageId: message.id,
+          channelId: message.channelId,
+          error: error.message,
+        }, error);
+      }
+
       logger.debug("[chat] Memory retrieval finished", {
         messageId: message.id,
         memoryCount: memories.length,

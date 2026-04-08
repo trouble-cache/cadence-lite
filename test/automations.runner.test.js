@@ -3,8 +3,10 @@ const assert = require("node:assert/strict");
 
 const {
   buildAutomationInput,
+  buildJournalSliceMemoryQuery,
   isAutomationDueNow,
   automationRanToday,
+  pickRandomContiguousWindow,
   selectJournalConversationSlices,
 } = require("../src/automations");
 
@@ -126,4 +128,48 @@ test("selectJournalConversationSlices excludes the journal channel and keeps coh
   assert.equal(slices.some((slice) => slice.label === "journal"), false);
   assert.equal(slices[0].events.length, 2);
   assert.equal(slices[1].events.length, 2);
+});
+
+test("pickRandomContiguousWindow can select a non-tail slice from a long conversation", () => {
+  const window = pickRandomContiguousWindow(
+    ["a", "b", "c", "d", "e"],
+    2,
+    () => 0.49,
+  );
+
+  assert.deepEqual(window, ["b", "c"]);
+});
+
+test("buildJournalSliceMemoryQuery aligns journal memories to the selected slice", () => {
+  const query = buildJournalSliceMemoryQuery({
+    slice: {
+      events: [
+        {
+          role: "user",
+          event_type: "message",
+          content_text: "Morning wobble.",
+        },
+        {
+          role: "assistant",
+          event_type: "message",
+          content_text: "We steadied it.",
+        },
+        {
+          role: "user",
+          event_type: "message",
+          content_text: "Evening reflection.",
+        },
+      ],
+    },
+    input: {
+      content: "Scheduled journal: Evening reflection",
+    },
+    mode: {
+      name: "default",
+    },
+  });
+
+  assert.match(query.primary, /Current user message:\nEvening reflection\./);
+  assert.match(query.continuity, /Recent user context:\nMorning wobble\./);
+  assert.doesNotMatch(query.continuity, /Scheduled journal/);
 });
