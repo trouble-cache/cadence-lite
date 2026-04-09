@@ -20,6 +20,8 @@ These are the values a normal user needs to provide when deploying from the temp
 - `DISCORD_GUILD_ID`
 - `OPENROUTER_API_KEY`
 
+If you are deploying somewhere other than Railway, start from `.env.example`. The app still expects the same core variables; Railway simply pre-fills more of the database and service wiring for you.
+
 ## Usually Prefilled By The Railway Template
 
 These are typically already wired up by the template:
