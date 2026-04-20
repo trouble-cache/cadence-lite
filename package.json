@@ -19,7 +19,7 @@
     "memories:sync": "node scripts/sync-memories-to-qdrant.js"
   },
   "dependencies": {
-    "discord.js": "^14.19.3",
+    "discord.js": "^14.26.3",
     "dotenv": "^17.3.1",
     "openai": "^6.32.0",
     "pg": "^8.20.0"
