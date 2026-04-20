@@ -73,7 +73,7 @@ function renderLiteSettingsPage({
     `<input id="chatTimezone" name="chatTimezone" type="text" value="${escapeHtml(timezoneValue)}">`,
     "<div class=\"toolbar\"><button type=\"submit\">Save Settings</button></div>",
     "<div class=\"form-divider\"></div>",
-    "<div class=\"copy-block\"><h2>Default Models</h2><p>Set the OpenRouter models Cadence Lite uses for live chat, image analysis, memory retrieval, and transcription. Enter the exact model names you want to use, and make sure your OpenRouter API key is set in Railway variables.</p></div>",
+    "<div class=\"copy-block\"><h2>Default Models</h2><p>Set the OpenRouter models Cadence Lite uses for live chat, image analysis, memory retrieval, and transcription. Enter the exact model names you want to use, and make sure your OpenRouter API key is set in Railway variables.</p><p class=\"meta\">When you save changed model slugs, Lite checks them against the models currently available to this OpenRouter key where possible, so filtered-out models are caught earlier.</p></div>",
     "<div class=\"model-table-wrap\">",
     "<table class=\"model-table\">",
     "<thead><tr><th>Function</th><th>Model</th><th>Notes</th></tr></thead>",

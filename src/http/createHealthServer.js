@@ -6,6 +6,9 @@ const { deleteMemoryEverywhere } = require("../memory/deleteMemories");
 const { canSyncMemories, syncMemoriesToQdrant, syncMemoryToQdrant } = require("../memory/syncMemories");
 const { deleteCollection, deletePoints } = require("../memory/qdrantClient");
 const { applyRuntimeSettings, extractRuntimeSettings, normalizeRuntimeSettings } = require("../config/runtimeSettings");
+const {
+  planSettingsSave,
+} = require("../llm/modelValidation");
 const { SUPPORTED_MEMORY_DOMAINS } = require("../memory/domains");
 const { SUPPORTED_MEMORY_TYPES, SUPPORTED_SENSITIVITY_LEVELS, SUPPORTED_AUTOMATION_TYPES } = require("../storage");
 const { registerDiscordCommands } = require("../bot/registerCommands");
@@ -1551,13 +1554,22 @@ function createHealthServer({
           const theme = normalizeTheme(fields.theme);
           const view = normalizeLiteAdminView(fields.view);
           const settings = parseLiteSettingsForm(fields);
+          const savePlan = await planSettingsSave({
+            config: innerContext.config,
+            settings,
+            fetchImpl: innerContext.fetch || globalThis.fetch,
+            logger: innerContext.logger,
+          });
 
-          await innerContext.settingsStore.upsertSettings(settings);
-          applyRuntimeSettings(innerContext.config, settings);
+          if (Object.keys(savePlan.settingsToPersist).length) {
+            await innerContext.settingsStore.upsertSettings(savePlan.settingsToPersist);
+            applyRuntimeSettings(innerContext.config, savePlan.settingsToPersist);
+          }
 
           redirect(innerRes, buildLiteAdminLocation({
             view,
-            message: "Saved Lite settings and applied them to the live config.",
+            message: savePlan.successMessage,
+            error: savePlan.errorMessage,
             theme,
             extra: {
               active: "all",
