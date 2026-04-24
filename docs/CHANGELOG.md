@@ -20,6 +20,30 @@ Short notes on meaningful internal changes to Cadence Lite.
 - Added explicit logs for messages skipped because mention-only mode is enabled and the bot was not mentioned.
 - Startup logs now include whether `DISCORD_RESPOND_TO_MENTIONS_ONLY` is enabled, which makes support debugging much less guessy.
 
+### Conversation exports
+
+- Added bulk conversation export tools to the Lite admin UI.
+- Lite now supports a flat CSV export of stored conversation events via `GET /admin/exports/conversation-events.csv`.
+- Lite now supports a ZIP export of readable per-conversation text logs via `GET /admin/exports/conversation-logs`.
+- The ZIP export includes `logs/*.txt`, `index.csv`, and `metadata.json`, and keeps the existing single-conversation CLI export working.
+
+### Admin HTTP tidy-up
+
+- Split Lite admin HTTP concerns into smaller modules instead of keeping everything inside `createHealthServer.js`.
+- Extracted admin export streaming into `src/http/adminExports.js`.
+- Extracted auth, redirects, and multipart/form parsing into `src/http/adminHttp.js`.
+- Extracted admin UI rendering helpers into `src/http/adminUi.js`.
+- Extracted admin POST action handlers into `src/http/adminActions.js`.
+- Extracted admin page data loading and filtering into `src/http/adminPageData.js`.
+
+### Sidebar footer and docs link
+
+- Added a small sidebar footer block with `Help Docs` and `Support Cadence` links.
+- Added Lite-specific sidebar footer styling and themed `help` / `patreon` icons.
+- Added a docs download route for `docs/Cadence Lite Setup Guide.pdf`.
+- Added a visible sidebar version label: `Cadence Lite v 1.02`.
+- Changed the main `Cadence Lite` sidebar logo link so it now returns users to the Lite dashboard home instead of linking out to Patreon.
+
 ## 2026-04-08
 
 ### Journal slices

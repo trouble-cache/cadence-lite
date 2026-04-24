@@ -177,6 +177,12 @@ test("renderLiteAdminPage shows the settings view with persisted runtime control
   assert.match(page, /Core-only feature/);
   assert.match(page, /data-theme="dark"/);
   assert.match(page, /\/admin\/memories\?theme=dark/);
+  assert.match(page, /class="sidebar-brand" href="\/admin\?theme=dark"/);
+  assert.match(page, /Help Docs/);
+  assert.match(page, /Support Cadence/);
+  assert.match(page, /Cadence Lite v 1\.02/);
+  assert.match(page, /\/docs\/Cadence%20Lite%20Setup%20Guide\.pdf/);
+  assert.match(page, /patreon\.com\/c\/CadenceAI/);
 });
 
 test("renderLiteAdminPage shows the memory desk as a compact table", () => {
