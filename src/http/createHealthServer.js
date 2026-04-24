@@ -107,7 +107,7 @@ function renderEntryPage(options) {
   });
 }
 
-function buildMemoryExportPayload({ config, memories = [] }) {
+function buildMemoryExportPayload({ memories = [] }) {
   return {
     exportedAt: new Date().toISOString(),
     product: "cadence-lite",
@@ -129,7 +129,6 @@ function buildMemoryExportPayload({ config, memories = [] }) {
 }
 
 function buildAppSettingsExportPayload({
-  config,
   settings = {},
   automations = [],
   journalEntries = [],

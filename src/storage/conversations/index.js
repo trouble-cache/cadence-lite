@@ -654,7 +654,6 @@ function createConversationStore({ config, logger }) {
       }
 
       const whereClause = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-      const relationRef = guildId ? "conversation_events" : "conversation_events";
       const { rows } = await pool.query(
         `
           SELECT
@@ -667,7 +666,7 @@ function createConversationStore({ config, logger }) {
           FROM conversation_events
           ${whereClause}
         `,
-        [...values, relationRef],
+        [...values, "conversation_events"],
       );
 
       const row = rows[0] || {};

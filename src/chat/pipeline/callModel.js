@@ -2,20 +2,6 @@ const { buildSystemPrompt } = require("../prompt/buildSystemPrompt");
 const { getLlmClient, hasLlmApiKey, resolveChatModel, resolveLlmProviderConfig } = require("../../llm/client");
 const { shouldUseWebSearch, buildWebSearchRequestOptions, extractWebSearchSources } = require("./webSearch");
 
-function formatRecentHistory(recentHistory) {
-  if (!recentHistory.length) {
-    return "None";
-  }
-
-  return recentHistory
-    .map((item, index) => {
-      const author = item.authorName || item.author?.username || item.role || "unknown";
-      const content = item.content || item.text || "";
-      return `${index + 1}. ${author}: ${content}`;
-    })
-    .join("\n");
-}
-
 function formatHistoryItem(item) {
   const content = String(item.content || item.text || "").trim();
 
