@@ -106,7 +106,29 @@ function splitTextIntoChunks(text, maxLength = DISCORD_MESSAGE_MAX_LENGTH) {
 
 function createMessageCreateHandler({ config, logger, chatPipeline, conversations }) {
   return async (message) => {
-    if (message.author.bot || !message.inGuild() || message.system) {
+    if (message.author.bot) {
+      logger.debug("[chat] Ignoring bot-authored message", {
+        messageId: message.id,
+        channelId: message.channelId,
+        authorId: message.author.id,
+      });
+      return;
+    }
+
+    if (message.system) {
+      logger.debug("[chat] Ignoring Discord system message", {
+        messageId: message.id,
+        channelId: message.channelId,
+      });
+      return;
+    }
+
+    if (!message.inGuild()) {
+      logger.info("[chat] Ignoring direct message; Cadence Lite only responds inside the configured Discord server", {
+        messageId: message.id,
+        channelId: message.channelId,
+        authorId: message.author.id,
+      });
       return;
     }
 
@@ -116,6 +138,13 @@ function createMessageCreateHandler({ config, logger, chatPipeline, conversation
     const authorName = message.member?.displayName || message.author.globalName || message.author.username;
 
     if (config.discord.respondToMentionsOnly && !wasMentioned) {
+      logger.info("[chat] Ignoring message because mention-only mode is enabled and the bot was not mentioned", {
+        guildId: message.guildId,
+        channelId: message.channelId,
+        conversationId,
+        messageId: message.id,
+        authorId: message.author.id,
+      });
       return;
     }
 

@@ -10,7 +10,19 @@ const {
   planSettingsSave,
 } = require("../llm/modelValidation");
 const { SUPPORTED_MEMORY_DOMAINS } = require("../memory/domains");
-const { SUPPORTED_MEMORY_TYPES, SUPPORTED_SENSITIVITY_LEVELS, SUPPORTED_AUTOMATION_TYPES } = require("../storage");
+const {
+  SUPPORTED_MEMORY_TYPES,
+  SUPPORTED_SENSITIVITY_LEVELS,
+  SUPPORTED_AUTOMATION_TYPES,
+  MAX_CONVERSATION_EXPORT_CONVERSATIONS,
+  MAX_CONVERSATION_LOG_EXPORT_EVENTS,
+  MAX_CONVERSATION_EVENT_CSV_ROWS,
+  buildConversationEventsCsv,
+  buildConversationLogFilename,
+  buildConversationLogsIndexCsv,
+  buildConversationLogsMetadata,
+  createZipBuffer,
+} = require("../storage");
 const { registerDiscordCommands } = require("../bot/registerCommands");
 const { renderLayout, renderEntryPage: renderSharedEntryPage } = require("./renderShared");
 const {
@@ -1069,6 +1081,88 @@ function createHealthServer({
             "Cache-Control": "no-store",
           });
           innerRes.end(JSON.stringify(payload, null, 2));
+        })(req, res, context);
+      }
+
+      if (req.method === "GET" && url.pathname === "/admin/exports/conversation-events.csv") {
+        return withAdmin(async (_req, innerRes, innerContext) => {
+          const guildId = innerContext.config.discord.guildId || "";
+          const rows = await innerContext.conversations.listEventsForExport({
+            guildId,
+            limit: MAX_CONVERSATION_EVENT_CSV_ROWS,
+          });
+          const payload = buildConversationEventsCsv(rows);
+          const dateStamp = new Date().toISOString().slice(0, 10);
+
+          innerRes.writeHead(200, {
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": `attachment; filename="cadence-conversation-events-${dateStamp}.csv"`,
+            "Cache-Control": "no-store",
+          });
+          innerRes.end(payload);
+        })(req, res, context);
+      }
+
+      if (req.method === "GET" && url.pathname === "/admin/exports/conversation-logs") {
+        return withAdmin(async (_req, innerRes, innerContext) => {
+          const guildId = innerContext.config.discord.guildId || "";
+          const conversations = await innerContext.conversations.listConversations({
+            guildId,
+            limit: MAX_CONVERSATION_EXPORT_CONVERSATIONS,
+          });
+          const usedLogNames = new Set();
+          const generatedAt = new Date().toISOString();
+          const files = [];
+          const indexEntries = [];
+
+          for (const conversation of conversations) {
+            const events = await innerContext.conversations.listEventsByConversationId({
+              conversationId: conversation.conversationId,
+              guildId,
+              limit: MAX_CONVERSATION_LOG_EXPORT_EVENTS,
+            });
+            const filename = buildConversationLogFilename(conversation, usedLogNames);
+            const content = innerContext.conversations.formatConversationExport(events, {
+              conversation,
+            });
+
+            files.push({
+              name: `logs/${filename}`,
+              content: `${content}\n`,
+              modifiedAt: conversation.lastEventAt || generatedAt,
+            });
+            indexEntries.push({
+              ...conversation,
+              filename,
+              eventCount: events.length,
+            });
+          }
+
+          files.push({
+            name: "index.csv",
+            content: buildConversationLogsIndexCsv(indexEntries),
+            modifiedAt: generatedAt,
+          });
+          files.push({
+            name: "metadata.json",
+            content: JSON.stringify(buildConversationLogsMetadata({
+              entries: indexEntries,
+              generatedAt,
+              conversationLimit: MAX_CONVERSATION_EXPORT_CONVERSATIONS,
+              perConversationEventLimit: MAX_CONVERSATION_LOG_EXPORT_EVENTS,
+            }), null, 2),
+            modifiedAt: generatedAt,
+          });
+
+          const payload = createZipBuffer(files, { now: generatedAt });
+          const dateStamp = generatedAt.slice(0, 10);
+
+          innerRes.writeHead(200, {
+            "Content-Type": "application/zip",
+            "Content-Disposition": `attachment; filename="cadence-conversation-logs-${dateStamp}.zip"`,
+            "Cache-Control": "no-store",
+          });
+          innerRes.end(payload);
         })(req, res, context);
       }
 

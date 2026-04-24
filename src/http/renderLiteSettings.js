@@ -31,6 +31,14 @@ function renderLiteSettingsPage({
     path: "/admin/exports/app-settings",
     theme,
   });
+  const conversationEventsExportLocation = buildAdminLocation({
+    path: "/admin/exports/conversation-events.csv",
+    theme,
+  });
+  const conversationLogsExportLocation = buildAdminLocation({
+    path: "/admin/exports/conversation-logs",
+    theme,
+  });
   const pruneOptions = renderOptions(["30", "60", "90", "180"], "90");
   const storage = conversationStorage || {
     eventCount: 0,
@@ -135,6 +143,13 @@ function renderLiteSettingsPage({
     `<a class="toolbar-button secondary" href="${escapeHtml(appSettingsExportLocation)}">Export App Settings</a>`,
     "</div>",
     "<p class=\"meta\" style=\"margin-top:.75rem\"><em>This backup is intended as a safety net for upgrades and restores. Durable memories are still exported separately through Export Memories.</em></p>",
+    "<div class=\"form-divider\"></div>",
+    "<div class=\"copy-block\"><h2>Export Conversations</h2><p>Download stored chat history either as a sortable CSV of conversation events or as a ZIP of readable per-conversation text logs with an index.</p></div>",
+    "<div class=\"toolbar\" style=\"align-items:center;gap:.75rem;flex-wrap:wrap\">",
+    `<a class="toolbar-button secondary" href="${escapeHtml(conversationEventsExportLocation)}">Export Conversation Events CSV</a>`,
+    `<a class="toolbar-button secondary" href="${escapeHtml(conversationLogsExportLocation)}">Export Conversation Logs ZIP</a>`,
+    "</div>",
+    "<p class=\"meta\" style=\"margin-top:.75rem\"><em>The ZIP export includes one plain-text log per conversation, plus an index CSV and metadata file for bulk review.</em></p>",
     "<div class=\"toolbar\" style=\"align-items:center;justify-content:space-between;margin-top:.75rem\">",
     "<div class=\"copy-block\" style=\"margin:0\"><h2>Rebuild Memory Index</h2><p>Recreate the memory index using your current embeddings model and resync all stored memories from Postgres. Use this if you change the embeddings model, or if the memory index needs to be rebuilt from scratch. This does not delete the source memories stored in Postgres.</p></div>",
     "</div>",

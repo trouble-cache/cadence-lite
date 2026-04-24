@@ -39,6 +39,7 @@ test("createMessageCreateHandler ignores Discord system messages", async () => {
       chat: {},
     },
     logger: {
+      debug() {},
       info() {},
       warn() {},
       error() {},
@@ -63,6 +64,120 @@ test("createMessageCreateHandler ignores Discord system messages", async () => {
   });
 
   assert.equal(wasCalled, false);
+});
+
+test("createMessageCreateHandler logs direct messages before ignoring them", async () => {
+  let wasCalled = false;
+  const infoLogs = [];
+  const handler = createMessageCreateHandler({
+    config: {
+      discord: {
+        respondToMentionsOnly: false,
+      },
+      chat: {},
+    },
+    logger: {
+      debug() {},
+      info(message, meta) {
+        infoLogs.push({ message, meta });
+      },
+      warn() {},
+      error() {},
+    },
+    chatPipeline: {
+      async run() {
+        wasCalled = true;
+        return "should not happen";
+      },
+    },
+    conversations: {
+      async recordEvent() {
+        wasCalled = true;
+      },
+    },
+  });
+
+  await handler({
+    id: "message-dm",
+    system: false,
+    inGuild: () => false,
+    channelId: "dm-1",
+    author: { bot: false, id: "user-1", username: "Georgia" },
+  });
+
+  assert.equal(wasCalled, false);
+  assert.equal(infoLogs.length, 1);
+  assert.equal(
+    infoLogs[0].message,
+    "[chat] Ignoring direct message; Cadence Lite only responds inside the configured Discord server",
+  );
+  assert.equal(infoLogs[0].meta.authorId, "user-1");
+});
+
+test("createMessageCreateHandler logs mention-only skips before ignoring them", async () => {
+  let wasCalled = false;
+  const infoLogs = [];
+  const handler = createMessageCreateHandler({
+    config: {
+      discord: {
+        respondToMentionsOnly: true,
+      },
+      chat: {},
+    },
+    logger: {
+      debug() {},
+      info(message, meta) {
+        infoLogs.push({ message, meta });
+      },
+      warn() {},
+      error() {},
+    },
+    chatPipeline: {
+      async run() {
+        wasCalled = true;
+        return "should not happen";
+      },
+    },
+    conversations: {
+      async recordEvent() {
+        wasCalled = true;
+      },
+    },
+  });
+
+  await handler({
+    id: "message-mention-only",
+    system: false,
+    inGuild: () => true,
+    guildId: "guild-1",
+    channelId: "channel-1",
+    author: { bot: false, id: "user-1", username: "Georgia" },
+    member: { displayName: "Georgia" },
+    channel: {
+      isThread: () => false,
+    },
+    mentions: {
+      users: {
+        has() {
+          return false;
+        },
+      },
+    },
+    client: {
+      user: {
+        id: "bot-1",
+      },
+    },
+  });
+
+  assert.equal(wasCalled, false);
+  assert.equal(infoLogs.length, 1);
+  assert.equal(
+    infoLogs[0].message,
+    "[chat] Ignoring message because mention-only mode is enabled and the bot was not mentioned",
+  );
+  assert.equal(infoLogs[0].meta.guildId, "guild-1");
+  assert.equal(infoLogs[0].meta.channelId, "channel-1");
 });
 
 test("createMessageCreateHandler passes the default mode into the pipeline", async () => {

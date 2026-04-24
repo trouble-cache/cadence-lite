@@ -2,6 +2,24 @@
 
 Short notes on meaningful internal changes to Cadence Lite.
 
+## 2026-04-24
+
+### Model validation on save
+
+- Added OpenRouter-backed model validation for changed Lite model settings using the current key's `/models/user` view.
+- Settings saves are now planned before persistence:
+  valid model changes save normally,
+  invalid model changes are rejected,
+  and non-model settings from the same form still save.
+- If OpenRouter model validation cannot be completed, Lite now saves the settings anyway and shows a warning instead of blocking the whole form.
+- Added a small admin UI note explaining that changed model slugs are checked against the models available to the current OpenRouter key where possible.
+
+### Discord diagnostics
+
+- Added explicit logs for silently ignored Discord messages that arrive as DMs.
+- Added explicit logs for messages skipped because mention-only mode is enabled and the bot was not mentioned.
+- Startup logs now include whether `DISCORD_RESPOND_TO_MENTIONS_ONLY` is enabled, which makes support debugging much less guessy.
+
 ## 2026-04-08
 
 ### Journal slices

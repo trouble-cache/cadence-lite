@@ -22,7 +22,7 @@ async function loadRecentHistory({ message, limit = 20, conversations }) {
     conversations,
   });
 
-  if (storedHistory) {
+  if (Array.isArray(storedHistory) && storedHistory.length > 0) {
     return storedHistory;
   }
 

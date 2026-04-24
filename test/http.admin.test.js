@@ -146,9 +146,14 @@ test("renderLiteAdminPage shows the settings view with persisted runtime control
   assert.match(page, /Export Memories/);
   assert.match(page, /Backup App Settings/);
   assert.match(page, /Export App Settings/);
+  assert.match(page, /Export Conversations/);
+  assert.match(page, /Export Conversation Events CSV/);
+  assert.match(page, /Export Conversation Logs ZIP/);
   assert.match(page, /things like saved settings, schedules, and journals/i);
   assert.match(page, /does not include durable memories or conversation history/i);
   assert.match(page, /\/admin\/exports\/app-settings\?theme=dark/);
+  assert.match(page, /\/admin\/exports\/conversation-events\.csv\?theme=dark/);
+  assert.match(page, /\/admin\/exports\/conversation-logs\?theme=dark/);
   assert.match(page, /Rebuild Memory Index/);
   assert.match(page, /This does not delete the source memories stored in Postgres/i);
   assert.match(page, /Setup &amp; Maintenance/);

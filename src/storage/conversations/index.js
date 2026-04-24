@@ -237,6 +237,9 @@ function createNoopConversationStore({ logger }) {
     async listEventsByConversationId() {
       return [];
     },
+    async listEventsForExport() {
+      return [];
+    },
     async listConversations() {
       return [];
     },
@@ -429,7 +432,16 @@ function createConversationStore({ config, logger }) {
       );
     },
 
-    async listEventsByConversationId({ conversationId, limit = 500, newestFirst = false }) {
+    async listEventsByConversationId({ conversationId, limit = 500, newestFirst = false, guildId = "" }) {
+      const values = [conversationId];
+      const clauses = ["conversation_id = $1"];
+
+      if (guildId) {
+        values.push(String(guildId).trim());
+        clauses.push(`guild_id = $${values.length}`);
+      }
+
+      values.push(limit);
       const { rows } = await pool.query(
         `
           SELECT
@@ -448,17 +460,64 @@ function createConversationStore({ config, logger }) {
             metadata,
             created_at
           FROM conversation_events
-          WHERE conversation_id = $1
+          WHERE ${clauses.join(" AND ")}
           ORDER BY created_at ${newestFirst ? "DESC" : "ASC"}
-          LIMIT $2
+          LIMIT $${values.length}
         `,
-        [conversationId, limit],
+        values,
       );
 
       return newestFirst ? rows.reverse() : rows;
     },
 
-    async listConversations({ limit = 20 }) {
+    async listEventsForExport({ guildId = "", limit = 1000 } = {}) {
+      const values = [limit];
+      let whereClause = "";
+
+      if (guildId) {
+        values.unshift(String(guildId).trim());
+        whereClause = "WHERE guild_id = $1";
+      }
+
+      const limitPlaceholder = guildId ? "$2" : "$1";
+      const { rows } = await pool.query(
+        `
+          SELECT
+            id,
+            conversation_id,
+            thread_id,
+            channel_id,
+            guild_id,
+            discord_message_id,
+            author_id,
+            author_name,
+            role,
+            source,
+            event_type,
+            content_text,
+            metadata,
+            created_at
+          FROM conversation_events
+          ${whereClause}
+          ORDER BY created_at ASC
+          LIMIT ${limitPlaceholder}
+        `,
+        values,
+      );
+
+      return rows;
+    },
+
+    async listConversations({ limit = 20, guildId = "" } = {}) {
+      const values = [];
+      let whereClause = "";
+
+      if (guildId) {
+        values.push(String(guildId).trim());
+        whereClause = `WHERE guild_id = $${values.length}`;
+      }
+
+      values.push(limit);
       const { rows } = await pool.query(
         `
           SELECT
@@ -482,11 +541,12 @@ function createConversationStore({ config, logger }) {
               WHERE event_type = 'summary_daily' AND metadata ? 'summaryDate'
             ) AS latest_summary_date
           FROM conversation_events
+          ${whereClause}
           GROUP BY conversation_id
           ORDER BY MAX(created_at) DESC
-          LIMIT $1
+          LIMIT $${values.length}
         `,
-        [limit],
+        values,
       );
 
       return rows.map(buildConversationSummary);

@@ -10,7 +10,7 @@ function registerEventHandlers({ client, config, logger, commands, chatPipeline,
     client.commands.set(command.data.name, command);
   }
 
-  client.once(Events.ClientReady, handleReady({ logger }));
+  client.once(Events.ClientReady, handleReady({ config, logger }));
   client.on(Events.InteractionCreate, createInteractionHandler({ logger }));
   client.on(Events.MessageCreate, createMessageCreateHandler({ config, logger, chatPipeline, conversations }));
 }

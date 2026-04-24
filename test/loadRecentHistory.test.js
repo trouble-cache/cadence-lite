@@ -135,3 +135,76 @@ test("loadRecentHistory falls back to live channel history when no conversation 
     ],
   );
 });
+
+test("loadRecentHistory falls back to live channel history when stored history is empty", async () => {
+  const history = await loadRecentHistory({
+    message: {
+      id: "msg-2",
+      channelId: "channel-1",
+      channel: {
+        isThread: () => false,
+        messages: {
+          async fetch({ limit }) {
+            assert.equal(limit, 3);
+
+            return [
+              {
+                id: "msg-1",
+                content: "First note",
+                createdTimestamp: 1,
+                author: { id: "user-1", username: "Georgia", bot: false },
+                member: { displayName: "Georgia" },
+                attachments: new Map(),
+              },
+              {
+                id: "msg-2",
+                content: "Current note",
+                createdTimestamp: 2,
+                author: { id: "user-1", username: "Georgia", bot: false },
+                member: { displayName: "Georgia" },
+                attachments: new Map(),
+              },
+              {
+                id: "msg-3",
+                content: "Reply note",
+                createdTimestamp: 3,
+                author: { id: "bot-1", username: "Cadence", bot: true },
+                member: { displayName: "Cadence" },
+                attachments: new Map(),
+              },
+            ];
+          },
+        },
+      },
+    },
+    limit: 2,
+    conversations: {
+      async listRecentHistoryByConversationId() {
+        return [];
+      },
+    },
+  });
+
+  assert.deepEqual(
+    history.map((item) => ({
+      id: item.id,
+      content: item.content,
+      authorName: item.authorName,
+      isBot: item.isBot,
+    })),
+    [
+      {
+        id: "msg-1",
+        content: "First note",
+        authorName: "Georgia",
+        isBot: false,
+      },
+      {
+        id: "msg-3",
+        content: "Reply note",
+        authorName: "Cadence",
+        isBot: true,
+      },
+    ],
+  );
+});
