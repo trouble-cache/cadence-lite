@@ -33,7 +33,7 @@ In plain English: you can use, study, and adapt Cadence Lite for noncommercial p
 Cadence Lite is a good fit if you want:
 
 - a private AI companion in your own Discord space
-- long-term memory you can actually review, edit, export, and manage
+- persistent memory you can actually review, edit, export, and manage
 - flexibility over which models you use
 - a setup that feels personal without locking you into one platform
 - a lighter, simpler starting point than the broader Cadence Core workspace
@@ -85,10 +85,22 @@ If you need bug-report guidance or want to know what support is currently offere
 
 - [Support](SUPPORT.md)
 
-## A note on scope
+## Lite vs Core
 
-Cadence Lite is the lightweight, self-deployable version of Cadence.
+`Cadence Lite`: The free, simpler entry point
+- durable fact-file memories only; it does not save broader long-term memories beyond that
+- daily schedules - check-in messages and journals
+- ability to send you AI images and voice notes via discord
+- OpenRouter support so you can switch models whenever you want
+- export tools to keep your data with you, always
 
-If you want to follow the broader Cadence Core development, you can find that here:
+`Cadence Core`: The paid product, main development focus moving forward
+- broader long-term memory systems
+- proactive "Metronome" actions
+- daily and weekly scheduling
+- optional modules included: gif messages, image generation
+- more advanced memory tools and automations
 
-- https://www.patreon.com/c/CadenceAI
+Smaller Core features and quality-of-life improvements may still make their way into Lite over time, but this will always remain the lighter, free version.
+
+[Buy Cadence Core](https://www.patreon.com/posts/cadence-private-156169435)
